@@ -1,0 +1,20 @@
+PODS:
+  - ReactiveObjC (3.1.1)
+  - YYModel (1.0.4)
+
+DEPENDENCIES:
+  - ReactiveObjC
+  - YYModel
+
+SPEC REPOS:
+  trunk:
+    - ReactiveObjC
+    - YYModel
+
+SPEC CHECKSUMS:
+  ReactiveObjC: 011caa393aa0383245f2dcf9bf02e86b80b36040
+  YYModel: 2a7fdd96aaa4b86a824e26d0c517de8928c04b30
+
+PODFILE CHECKSUM: 9a084b21ddd4b5ba971b91b0b15bfe9c82584df6
+
+COCOAPODS: 1.9.1
