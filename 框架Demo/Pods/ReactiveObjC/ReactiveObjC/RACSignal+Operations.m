@@ -945,7 +945,9 @@ static RACDisposable *subscribeForever (RACSignal *signal, void (^next)(id), voi
 }
 
 - (RACMulticastConnection *)publish {
+    // 创建订阅者
 	RACSubject *subject = [[RACSubject subject] setNameWithFormat:@"[%@] -publish", self.name];
+    // 创建connection，参数是刚才创建的订阅者
 	RACMulticastConnection *connection = [self multicast:subject];
 	return connection;
 }

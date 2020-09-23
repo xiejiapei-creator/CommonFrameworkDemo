@@ -44,6 +44,8 @@ const NSUInteger RACReplaySubjectUnlimitedCapacity = NSUIntegerMax;
 	self = [super init];
 	
 	_capacity = capacity;
+    
+    // 会用这个数组保存值value
 	_valuesReceived = (capacity == RACReplaySubjectUnlimitedCapacity ? [NSMutableArray array] : [NSMutableArray arrayWithCapacity:capacity]);
 	
 	return self;
@@ -84,12 +86,14 @@ const NSUInteger RACReplaySubjectUnlimitedCapacity = NSUIntegerMax;
 
 - (void)sendNext:(id)value {
 	@synchronized (self) {
+        // 发送信号的时候，会先将值value保存到数组中
 		[self.valuesReceived addObject:value ?: RACTupleNil.tupleNil];
 		
 		if (self.capacity != RACReplaySubjectUnlimitedCapacity && self.valuesReceived.count > self.capacity) {
 			[self.valuesReceived removeObjectsInRange:NSMakeRange(0, self.valuesReceived.count - self.capacity)];
 		}
 		
+        // 调用父类发送（先遍历订阅者，然后发送值value）
 		[super sendNext:value];
 	}
 }

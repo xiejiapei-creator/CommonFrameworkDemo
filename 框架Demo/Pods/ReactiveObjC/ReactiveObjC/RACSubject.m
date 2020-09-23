@@ -79,11 +79,15 @@
 
 - (void)enumerateSubscribersUsingBlock:(void (^)(id<RACSubscriber> subscriber))block {
 	NSArray *subscribers;
+    
 	@synchronized (self.subscribers) {
 		subscribers = [self.subscribers copy];
 	}
-
+    
+    // 1. 先遍历订阅者数组中的订阅者
 	for (id<RACSubscriber> subscriber in subscribers) {
+        // 2. 后执行订阅者中的nextBlock
+        // 3. 最后让订阅者发送信号
 		block(subscriber);
 	}
 }
@@ -91,6 +95,7 @@
 #pragma mark RACSubscriber
 
 - (void)sendNext:(id)value {
+    // 遍历_subscribers数组，执行nextBlock
 	[self enumerateSubscribersUsingBlock:^(id<RACSubscriber> subscriber) {
 		[subscriber sendNext:value];
 	}];

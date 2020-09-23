@@ -41,8 +41,12 @@
 
 	self = [super init];
 
+    // 保存原始信号
 	_sourceSignal = source;
+    
 	_serialDisposable = [[RACSerialDisposable alloc] init];
+    
+    // 保存订阅者，即_signal是RACSubject对象
 	_signal = subject;
 	
 	return self;
@@ -54,6 +58,8 @@
 	BOOL shouldConnect = OSAtomicCompareAndSwap32Barrier(0, 1, &_hasConnected);
 
 	if (shouldConnect) {
+        // 订阅原生信号
+        // 执行创建信号的block
 		self.serialDisposable.disposable = [self.sourceSignal subscribe:_signal];
 	}
 

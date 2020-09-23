@@ -84,6 +84,8 @@ NSString * const RACUnderlyingCommandErrorKey = @"RACUnderlyingCommandErrorKey";
 
 	_addedExecutionSignalsSubject = [RACSubject new];
 	_allowsConcurrentExecutionSubject = [RACSubject new];
+    
+    // 保存创建信号的block
 	_signalBlock = [signalBlock copy];
 
 	_executionSignals = [[[self.addedExecutionSignalsSubject
@@ -187,12 +189,15 @@ NSString * const RACUnderlyingCommandErrorKey = @"RACUnderlyingCommandErrorKey";
 	//
 	// This means that `executing` and `enabled` will send updated values before
 	// the signal actually starts performing work.
+    
+    // 创建连接，用RACReplaySubject作为订阅者
 	RACMulticastConnection *connection = [[signal
 		subscribeOn:RACScheduler.mainThreadScheduler]
 		multicast:[RACReplaySubject subject]];
 	
 	[self.addedExecutionSignalsSubject sendNext:connection.signal];
 
+    // 连接信号
 	[connection connect];
 	return [connection.signal setNameWithFormat:@"%@ -execute: %@", self, RACDescription(input)];
 }

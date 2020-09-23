@@ -13,6 +13,8 @@
 		E9110FB425109A4300670540 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = E9110FB225109A4300670540 /* LaunchScreen.storyboard */; };
 		E9110FB725109A4300670540 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = E9110FB625109A4300670540 /* main.m */; };
 		E9110FC125109D7F00670540 /* YYModelDemoViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = E9110FC025109D7F00670540 /* YYModelDemoViewController.m */; };
+		E9110FC82511AC6400670540 /* ReactiveDemoViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = E9110FC72511AC6400670540 /* ReactiveDemoViewController.m */; };
+		E9110FCA2511F0D800670540 /* luckcoffee.JPG in Resources */ = {isa = PBXBuildFile; fileRef = E9110FC92511F0D800670540 /* luckcoffee.JPG */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -27,6 +29,9 @@
 		E9110FB625109A4300670540 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		E9110FBF25109D7F00670540 /* YYModelDemoViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = YYModelDemoViewController.h; sourceTree = "<group>"; };
 		E9110FC025109D7F00670540 /* YYModelDemoViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = YYModelDemoViewController.m; sourceTree = "<group>"; };
+		E9110FC62511AC6400670540 /* ReactiveDemoViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ReactiveDemoViewController.h; sourceTree = "<group>"; };
+		E9110FC72511AC6400670540 /* ReactiveDemoViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ReactiveDemoViewController.m; sourceTree = "<group>"; };
+		E9110FC92511F0D800670540 /* luckcoffee.JPG */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = luckcoffee.JPG; sourceTree = "<group>"; };
 		FCCCC3BE880E68130E8F9ACB /* libPods-框架Demo.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-框架Demo.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -80,6 +85,7 @@
 		E9110FA325109A4200670540 /* 框架Demo */ = {
 			isa = PBXGroup;
 			children = (
+				E9110FC22510CAA000670540 /* ReactiveCocoa */,
 				E9110FBE25109D6000670540 /* YYModel */,
 				E9110FBD25109A5400670540 /* SupportingFiles */,
 				E9110FB525109A4300670540 /* Info.plist */,
@@ -90,6 +96,7 @@
 		E9110FBD25109A5400670540 /* SupportingFiles */ = {
 			isa = PBXGroup;
 			children = (
+				E9110FC92511F0D800670540 /* luckcoffee.JPG */,
 				E9110FA425109A4200670540 /* AppDelegate.h */,
 				E9110FA525109A4200670540 /* AppDelegate.m */,
 				E9110FB025109A4300670540 /* Assets.xcassets */,
@@ -106,6 +113,15 @@
 				E9110FC025109D7F00670540 /* YYModelDemoViewController.m */,
 			);
 			path = YYModel;
+			sourceTree = "<group>";
+		};
+		E9110FC22510CAA000670540 /* ReactiveCocoa */ = {
+			isa = PBXGroup;
+			children = (
+				E9110FC62511AC6400670540 /* ReactiveDemoViewController.h */,
+				E9110FC72511AC6400670540 /* ReactiveDemoViewController.m */,
+			);
+			path = ReactiveCocoa;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -167,6 +183,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				E9110FB425109A4300670540 /* LaunchScreen.storyboard in Resources */,
+				E9110FCA2511F0D800670540 /* luckcoffee.JPG in Resources */,
 				E9110FB125109A4300670540 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -204,6 +221,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				E9110FA625109A4200670540 /* AppDelegate.m in Sources */,
+				E9110FC82511AC6400670540 /* ReactiveDemoViewController.m in Sources */,
 				E9110FB725109A4300670540 /* main.m in Sources */,
 				E9110FC125109D7F00670540 /* YYModelDemoViewController.m in Sources */,
 			);

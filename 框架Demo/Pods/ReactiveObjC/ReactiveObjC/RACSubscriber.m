@@ -28,7 +28,8 @@
 
 + (instancetype)subscriberWithNext:(void (^)(id x))next error:(void (^)(NSError *error))error completed:(void (^)(void))completed {
 	RACSubscriber *subscriber = [[self alloc] init];
-
+    
+    // 将block保存到subscriber中
 	subscriber->_next = [next copy];
 	subscriber->_error = [error copy];
 	subscriber->_completed = [completed copy];
@@ -65,9 +66,13 @@
 
 - (void)sendNext:(id)value {
 	@synchronized (self) {
+        // 名为next的block是返回值为void，参数为id类型的value
+        // 在sendNext:内部，将next复制给nextBlock
 		void (^nextBlock)(id) = [self.next copy];
+        
 		if (nextBlock == nil) return;
-
+        
+        // 执行该方法后，subscribeNext:的block参数才会被调用
 		nextBlock(value);
 	}
 }

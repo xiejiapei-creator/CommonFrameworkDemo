@@ -280,6 +280,8 @@
 	NSCParameterAssert(nextBlock != NULL);
 	NSCParameterAssert(completedBlock != NULL);
 	
+    // 内部创建了RACSubscriber（订阅者）类的实例对象o，并且将nextBlock保存到o中
+    // 在返回值处执行o，实际也是执行了nextBlock
 	RACSubscriber *o = [RACSubscriber subscriberWithNext:nextBlock error:NULL completed:completedBlock];
 	return [self subscribe:o];
 }

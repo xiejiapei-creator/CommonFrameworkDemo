@@ -8,6 +8,7 @@
 
 #import "AppDelegate.h"
 #import "YYModelDemoViewController.h"
+#import "ReactiveDemoViewController.h"
 
 @interface AppDelegate ()
 
@@ -18,7 +19,7 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
-    YYModelDemoViewController *rootVC = [[YYModelDemoViewController alloc] init];
+    ReactiveDemoViewController *rootVC = [[ReactiveDemoViewController alloc] init];
     UINavigationController *mainNC = [[UINavigationController alloc] initWithRootViewController:rootVC];
     
     self.window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
