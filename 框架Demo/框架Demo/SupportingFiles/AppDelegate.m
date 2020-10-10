@@ -9,6 +9,7 @@
 #import "AppDelegate.h"
 #import "YYModelDemoViewController.h"
 #import "ReactiveDemoViewController.h"
+#import "FMDBViewController.h"
 
 @interface AppDelegate ()
 
@@ -19,7 +20,7 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
-    ReactiveDemoViewController *rootVC = [[ReactiveDemoViewController alloc] init];
+    FMDBViewController *rootVC = [[FMDBViewController alloc] init];
     UINavigationController *mainNC = [[UINavigationController alloc] initWithRootViewController:rootVC];
     
     self.window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];

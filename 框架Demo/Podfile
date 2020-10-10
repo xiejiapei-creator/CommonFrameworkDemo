@@ -6,6 +6,6 @@ target '框架Demo' do
  
 pod 'YYModel'
 pod 'ReactiveObjC'
-
+pod 'FMDB'
 
 end
