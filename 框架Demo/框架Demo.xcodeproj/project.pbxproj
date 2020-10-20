@@ -15,6 +15,7 @@
 		E9110FC125109D7F00670540 /* YYModelDemoViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = E9110FC025109D7F00670540 /* YYModelDemoViewController.m */; };
 		E9110FC82511AC6400670540 /* ReactiveDemoViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = E9110FC72511AC6400670540 /* ReactiveDemoViewController.m */; };
 		E9110FCA2511F0D800670540 /* luckcoffee.JPG in Resources */ = {isa = PBXBuildFile; fileRef = E9110FC92511F0D800670540 /* luckcoffee.JPG */; };
+		E9D0DAE3253EE75C00BD24E3 /* FMDBSimpleDemoViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = E9D0DAE2253EE75C00BD24E3 /* FMDBSimpleDemoViewController.m */; };
 		E9E91028253146DD00020444 /* FMDBViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = E9E91027253146DD00020444 /* FMDBViewController.m */; };
 /* End PBXBuildFile section */
 
@@ -33,6 +34,8 @@
 		E9110FC62511AC6400670540 /* ReactiveDemoViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ReactiveDemoViewController.h; sourceTree = "<group>"; };
 		E9110FC72511AC6400670540 /* ReactiveDemoViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ReactiveDemoViewController.m; sourceTree = "<group>"; };
 		E9110FC92511F0D800670540 /* luckcoffee.JPG */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = luckcoffee.JPG; sourceTree = "<group>"; };
+		E9D0DAE1253EE75C00BD24E3 /* FMDBSimpleDemoViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FMDBSimpleDemoViewController.h; sourceTree = "<group>"; };
+		E9D0DAE2253EE75C00BD24E3 /* FMDBSimpleDemoViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FMDBSimpleDemoViewController.m; sourceTree = "<group>"; };
 		E9E91026253146DD00020444 /* FMDBViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FMDBViewController.h; sourceTree = "<group>"; };
 		E9E91027253146DD00020444 /* FMDBViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FMDBViewController.m; sourceTree = "<group>"; };
 		FCCCC3BE880E68130E8F9ACB /* libPods-框架Demo.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-框架Demo.a"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -128,11 +131,29 @@
 			path = ReactiveCocoa;
 			sourceTree = "<group>";
 		};
-		E9E910202531467800020444 /* FMDB */ = {
+		E9D0DAE5253EE76100BD24E3 /* 下载缓存图片的Demo */ = {
 			isa = PBXGroup;
 			children = (
 				E9E91026253146DD00020444 /* FMDBViewController.h */,
 				E9E91027253146DD00020444 /* FMDBViewController.m */,
+			);
+			path = "下载缓存图片的Demo";
+			sourceTree = "<group>";
+		};
+		E9D0DAE6253EE76900BD24E3 /* 简单Demo */ = {
+			isa = PBXGroup;
+			children = (
+				E9D0DAE1253EE75C00BD24E3 /* FMDBSimpleDemoViewController.h */,
+				E9D0DAE2253EE75C00BD24E3 /* FMDBSimpleDemoViewController.m */,
+			);
+			path = "简单Demo";
+			sourceTree = "<group>";
+		};
+		E9E910202531467800020444 /* FMDB */ = {
+			isa = PBXGroup;
+			children = (
+				E9D0DAE6253EE76900BD24E3 /* 简单Demo */,
+				E9D0DAE5253EE76100BD24E3 /* 下载缓存图片的Demo */,
 			);
 			path = FMDB;
 			sourceTree = "<group>";
@@ -237,6 +258,7 @@
 				E9110FC82511AC6400670540 /* ReactiveDemoViewController.m in Sources */,
 				E9E91028253146DD00020444 /* FMDBViewController.m in Sources */,
 				E9110FB725109A4300670540 /* main.m in Sources */,
+				E9D0DAE3253EE75C00BD24E3 /* FMDBSimpleDemoViewController.m in Sources */,
 				E9110FC125109D7F00670540 /* YYModelDemoViewController.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
