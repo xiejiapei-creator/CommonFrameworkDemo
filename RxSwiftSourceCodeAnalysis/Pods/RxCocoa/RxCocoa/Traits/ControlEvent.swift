@@ -35,7 +35,8 @@ public protocol ControlEventType : ObservableType {
     **If the `events` observable sequence passed into the initializer doesn’t satisfy all enumerated
      properties, don’t use this trait.**
 */
-public struct ControlEvent<PropertyType> : ControlEventType {
+public struct ControlEvent<PropertyType> : ControlEventType
+{
     public typealias Element = PropertyType
 
     let events: Observable<PropertyType>
@@ -44,7 +45,8 @@ public struct ControlEvent<PropertyType> : ControlEventType {
     ///
     /// - parameter events: Observable sequence that represents events.
     /// - returns: Control event created with a observable sequence of events.
-    public init<Ev: ObservableType>(events: Ev) where Ev.Element == Element {
+    public init<Ev: ObservableType>(events: Ev) where Ev.Element == Element
+    {
         self.events = events.subscribe(on: ConcurrentMainScheduler.instance)
     }
 

@@ -35,12 +35,14 @@ import Foundation
 /// This is the default scheduler for operators that generate elements.
 ///
 /// This scheduler is also sometimes called `trampoline scheduler`.
-public class CurrentThreadScheduler : ImmediateSchedulerType {
+public class CurrentThreadScheduler : ImmediateSchedulerType
+{
     typealias ScheduleQueue = RxMutableBox<Queue<ScheduledItemType>>
 
     /// The singleton instance of the current thread scheduler.
     public static let instance = CurrentThreadScheduler()
 
+    
     private static var isScheduleRequiredKey: pthread_key_t = { () -> pthread_key_t in
         let key = UnsafeMutablePointer<pthread_key_t>.allocate(capacity: 1)
         defer { key.deallocate() }
@@ -56,17 +58,24 @@ public class CurrentThreadScheduler : ImmediateSchedulerType {
         return UnsafeRawPointer(UnsafeMutablePointer<Int>.allocate(capacity: 1))
     }()
 
-    static var queue : ScheduleQueue? {
-        get {
+    // 利用对队列的set和get方法的观察，将当前队列与静态字符串进行绑定
+    static var queue : ScheduleQueue?
+    {
+        get
+        {
             return Thread.getThreadLocalStorageValueForKey(CurrentThreadSchedulerQueueKey.instance)
         }
-        set {
+        set
+        {
             Thread.setThreadLocalStorageValue(newValue, forKey: CurrentThreadSchedulerQueueKey.instance)
         }
     }
 
     /// Gets a value that indicates whether the caller must call a `schedule` method.
-    public static private(set) var isScheduleRequired: Bool {
+    
+    // 提供给外界获取，用于判断当前队列是否被关联
+    public static private(set) var isScheduleRequired: Bool
+    {
         get {
             return pthread_getspecific(CurrentThreadScheduler.isScheduleRequiredKey) == nil
         }

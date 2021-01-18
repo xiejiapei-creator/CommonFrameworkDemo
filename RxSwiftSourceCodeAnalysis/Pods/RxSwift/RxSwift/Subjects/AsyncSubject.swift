@@ -109,11 +109,13 @@ public final class AsyncSubject<Element>
     ///
     /// - parameter observer: Observer to subscribe to the subject.
     /// - returns: Disposable object that can be used to unsubscribe the observer from the subject.
-    public override func subscribe<Observer: ObserverType>(_ observer: Observer) -> Disposable where Observer.Element == Element {
+    public override func subscribe<Observer: ObserverType>(_ observer: Observer) -> Disposable where Observer.Element == Element
+    {
         self.lock.performLocked { self.synchronized_subscribe(observer) }
     }
 
-    func synchronized_subscribe<Observer: ObserverType>(_ observer: Observer) -> Disposable where Observer.Element == Element {
+    func synchronized_subscribe<Observer: ObserverType>(_ observer: Observer) -> Disposable where Observer.Element == Element
+    {
         if let stoppedEvent = self.stoppedEvent {
             switch stoppedEvent {
             case .next:
@@ -136,7 +138,8 @@ public final class AsyncSubject<Element>
         self.lock.performLocked { self.synchronized_unsubscribe(disposeKey) }
     }
     
-    func synchronized_unsubscribe(_ disposeKey: DisposeKey) {
+    func synchronized_unsubscribe(_ disposeKey: DisposeKey)
+    {
         _ = self.observers.removeKey(disposeKey)
     }
     
@@ -151,4 +154,7 @@ public final class AsyncSubject<Element>
     }
     #endif
 }
+
+
+
 

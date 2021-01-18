@@ -22,8 +22,10 @@ func dispatch<Element>(_ bag: Bag<(Event<Element>) -> Void>, _ event: Event<Elem
         pairs[i].value(event)
     }
 
-    if let dictionary = bag._dictionary {
-        for element in dictionary.values {
+    if let dictionary = bag._dictionary
+    {
+        for element in dictionary.values
+        {
             element(event)
         }
     }

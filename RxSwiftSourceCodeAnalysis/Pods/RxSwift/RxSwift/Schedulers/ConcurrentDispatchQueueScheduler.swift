@@ -12,7 +12,8 @@ import Foundation
 /// Abstracts the work that needs to be performed on a specific `dispatch_queue_t`. You can also pass a serial dispatch queue, it shouldn't cause any problems.
 ///
 /// This scheduler is suitable when some work needs to be performed in background.
-public class ConcurrentDispatchQueueScheduler: SchedulerType {
+public class ConcurrentDispatchQueueScheduler: SchedulerType
+{
     public typealias TimeInterval = Foundation.TimeInterval
     public typealias Time = Date
     
@@ -26,7 +27,8 @@ public class ConcurrentDispatchQueueScheduler: SchedulerType {
     ///
     /// - parameter queue: Target dispatch queue.
     /// - parameter leeway: The amount of time, in nanoseconds, that the system will defer the timer.
-    public init(queue: DispatchQueue, leeway: DispatchTimeInterval = DispatchTimeInterval.nanoseconds(0)) {
+    public init(queue: DispatchQueue, leeway: DispatchTimeInterval = DispatchTimeInterval.nanoseconds(0))
+    {
         self.configuration = DispatchQueueConfiguration(queue: queue, leeway: leeway)
     }
     
@@ -34,7 +36,8 @@ public class ConcurrentDispatchQueueScheduler: SchedulerType {
     ///
     /// - parameter qos: Target global dispatch queue, by quality of service class.
     /// - parameter leeway: The amount of time, in nanoseconds, that the system will defer the timer.
-    public convenience init(qos: DispatchQoS, leeway: DispatchTimeInterval = DispatchTimeInterval.nanoseconds(0)) {
+    public convenience init(qos: DispatchQoS, leeway: DispatchTimeInterval = DispatchTimeInterval.nanoseconds(0))
+    {
         self.init(queue: DispatchQueue(
             label: "rxswift.queue.\(qos)",
             qos: qos,
@@ -79,4 +82,7 @@ public class ConcurrentDispatchQueueScheduler: SchedulerType {
     public func schedulePeriodic<StateType>(_ state: StateType, startAfter: RxTimeInterval, period: RxTimeInterval, action: @escaping (StateType) -> StateType) -> Disposable {
         self.configuration.schedulePeriodic(state, startAfter: startAfter, period: period, action: action)
     }
+
 }
+
+

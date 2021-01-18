@@ -26,7 +26,11 @@ In case some customization need to be made on it before usage,
 internal serial queue can be customized using `serialQueueConfiguration`
 callback.
 */
-public class SerialDispatchQueueScheduler : SchedulerType {
+
+//
+//
+public class SerialDispatchQueueScheduler : SchedulerType
+{
     public typealias TimeInterval = Foundation.TimeInterval
     public typealias Time = Date
     
@@ -43,7 +47,9 @@ public class SerialDispatchQueueScheduler : SchedulerType {
     - parameter serialQueue: Target dispatch queue.
     - parameter leeway: The amount of time, in nanoseconds, that the system will defer the timer.
     */
-    init(serialQueue: DispatchQueue, leeway: DispatchTimeInterval = DispatchTimeInterval.nanoseconds(0)) {
+    //
+    init(serialQueue: DispatchQueue, leeway: DispatchTimeInterval = DispatchTimeInterval.nanoseconds(0))
+    {
         self.configuration = DispatchQueueConfiguration(queue: serialQueue, leeway: leeway)
     }
 
@@ -56,7 +62,8 @@ public class SerialDispatchQueueScheduler : SchedulerType {
     - parameter serialQueueConfiguration: Additional configuration of internal serial dispatch queue.
     - parameter leeway: The amount of time, in nanoseconds, that the system will defer the timer.
     */
-    public convenience init(internalSerialQueueName: String, serialQueueConfiguration: ((DispatchQueue) -> Void)? = nil, leeway: DispatchTimeInterval = DispatchTimeInterval.nanoseconds(0)) {
+    public convenience init(internalSerialQueueName: String, serialQueueConfiguration: ((DispatchQueue) -> Void)? = nil, leeway: DispatchTimeInterval = DispatchTimeInterval.nanoseconds(0))
+    {
         let queue = DispatchQueue(label: internalSerialQueueName, attributes: [])
         serialQueueConfiguration?(queue)
         self.init(serialQueue: queue, leeway: leeway)
@@ -88,7 +95,7 @@ public class SerialDispatchQueueScheduler : SchedulerType {
     public convenience init(qos: DispatchQoS, internalSerialQueueName: String = "rx.global_dispatch_queue.serial", leeway: DispatchTimeInterval = DispatchTimeInterval.nanoseconds(0)) {
         self.init(queue: DispatchQueue.global(qos: qos.qosClass), internalSerialQueueName: internalSerialQueueName, leeway: leeway)
     }
-    
+
     /**
     Schedules an action to be executed immediately.
     
@@ -129,3 +136,4 @@ public class SerialDispatchQueueScheduler : SchedulerType {
         self.configuration.schedulePeriodic(state, startAfter: startAfter, period: period, action: action)
     }
 }
+

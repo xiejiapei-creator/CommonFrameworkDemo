@@ -11,13 +11,22 @@ import RxCocoa
 
 class ViewController: UIViewController
 {
-
+    var actionButton: UIButton! = UIButton(frame: CGRect(x: 130, y: 100, width: 100, height: 50))
+    var tittleLabel: UILabel! = UILabel(frame: CGRect(x: 130, y: 200, width: 100, height: 50))
+    let disposeBag = DisposeBag()
+    let lock = NSLock()
+    var array = NSMutableArray()
+    
     override func viewDidLoad()
     {
         super.viewDidLoad()
+        createSubview()
        
         // RxSwift核心流程
-        coreProcess()
+        //coreProcess()
+        
+        // Scheduler调度者
+        scheduler()
     }
     
     // RxSwift核心流程
@@ -42,7 +51,36 @@ class ViewController: UIViewController
             onCompleted: { print("订阅完成") },
             onDisposed: { print("销毁观察者") })
     }
+    
+    // Scheduler调度者
+    func scheduler()
+    {
+        // RXSwift内部处理了线程问题
+        DispatchQueue.global().async
+        {
+            print("请求数据")
+            self.actionButton.rx.tap
+                .subscribe(onNext: { () in
+                    print("点击了按钮，当前线程为：\(Thread.current)")
+                })
+                .disposed(by: self.disposeBag)
+        }
+    }
+    
+    
+    
+    func createSubview()
+    {
+        actionButton.setTitle("按钮", for: .normal)
+        actionButton.backgroundColor = .orange
+        view.addSubview(actionButton)
+        
+        tittleLabel.text = "文本"
+        tittleLabel.backgroundColor = .yellow
+        view.addSubview(tittleLabel)
+    }
 }
+
 
 
 
