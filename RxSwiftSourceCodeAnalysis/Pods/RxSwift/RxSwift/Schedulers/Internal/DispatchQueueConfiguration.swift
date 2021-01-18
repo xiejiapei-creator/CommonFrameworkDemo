@@ -9,12 +9,14 @@
 import Dispatch
 import Foundation
 
-struct DispatchQueueConfiguration {
+struct DispatchQueueConfiguration
+{
     let queue: DispatchQueue
     let leeway: DispatchTimeInterval
 }
 
-extension DispatchQueueConfiguration {
+extension DispatchQueueConfiguration
+{
     func schedule<StateType>(_ state: StateType, action: @escaping (StateType) -> Disposable) -> Disposable {
         let cancel = SingleAssignmentDisposable()
 
@@ -30,7 +32,8 @@ extension DispatchQueueConfiguration {
         return cancel
     }
 
-    func scheduleRelative<StateType>(_ state: StateType, dueTime: RxTimeInterval, action: @escaping (StateType) -> Disposable) -> Disposable {
+    func scheduleRelative<StateType>(_ state: StateType, dueTime: RxTimeInterval, action: @escaping (StateType) -> Disposable) -> Disposable
+    {
         let deadline = DispatchTime.now() + dueTime
 
         let compositeDisposable = CompositeDisposable()
@@ -64,11 +67,14 @@ extension DispatchQueueConfiguration {
         return compositeDisposable
     }
 
-    func schedulePeriodic<StateType>(_ state: StateType, startAfter: RxTimeInterval, period: RxTimeInterval, action: @escaping (StateType) -> StateType) -> Disposable {
+    func schedulePeriodic<StateType>(_ state: StateType, startAfter: RxTimeInterval, period: RxTimeInterval, action: @escaping (StateType) -> StateType) -> Disposable
+    {
+        // 初始化为系统当前时间
         let initial = DispatchTime.now() + startAfter
 
         var timerState = state
 
+        // 底层使用GCD的方式实现了计时器
         let timer = DispatchSource.makeTimerSource(queue: self.queue)
         timer.schedule(deadline: initial, repeating: period, leeway: self.leeway)
         
@@ -84,12 +90,17 @@ extension DispatchQueueConfiguration {
             timerReference = nil
         }
 
+        // 设置响应事件
         timer.setEventHandler(handler: {
-            if cancelTimer.isDisposed {
+            // 计时器被销毁了
+            if cancelTimer.isDisposed
+            {
                 return
             }
+            // 不断发送最新状态
             timerState = action(timerState)
         })
+        // 启动计时器
         timer.resume()
         
         return cancelTimer
