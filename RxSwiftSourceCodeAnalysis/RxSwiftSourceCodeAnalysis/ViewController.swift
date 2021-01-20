@@ -19,8 +19,6 @@ class ViewController: UIViewController
     var intervalObservable: Observable<Int>!
     var startAction: UIButton! = UIButton(frame: CGRect(x: 130, y: 300, width: 100, height: 50))
     var stopAction: UIButton! = UIButton(frame: CGRect(x: 130, y: 380, width: 100, height: 50))
-    var timer: Timer?
-    let proxy: Proxy = Proxy()
     
     override func viewDidLoad()
     {
@@ -36,10 +34,6 @@ class ViewController: UIViewController
         // Dispose销毁者
         //disposeIntervalObservable()
         //disposeLimitObservable()
-        
-        // 中介者模式
-        //timerCircularReference()
-        proxySolveCircularReference()
     }
     
     // MARK: RxSwift核心流程
@@ -122,37 +116,6 @@ class ViewController: UIViewController
         
         print("执行完毕")
         //dispose.dispose()
-    }
-    
-    // MARK: 中介者模式
-    // 使用Timer时的循环引用问题
-    func timerCircularReference()
-    {
-        //self.timer = Timer.init(timeInterval: 1, target: self, selector: #selector(timerFire), userInfo: nil, repeats: true)
-        
-        self.timer = Timer.init(timeInterval: 1, repeats: true, block:
-        { (timer) in
-            print("火箭🚀发射 \(timer)")
-        })
-        
-        RunLoop.current.add(self.timer!, forMode: .common)
-    }
-    
-    // 使用Proxy中介者解决Timer的循环引用问题
-    func proxySolveCircularReference()
-    {
-        let selector = NSSelectorFromString("timerFire")
-        self.proxy.scheduledTimer(timeInterval: 1, target: self, selector: selector, userInfo: nil, repeats: true)
-    }
-
-    @objc func timerFire()
-    {
-        print("火箭🚀发射")
-    }
-    
-    deinit
-    {
-        print("\(self) 界面销毁了")
     }
     
     func createSubview()
