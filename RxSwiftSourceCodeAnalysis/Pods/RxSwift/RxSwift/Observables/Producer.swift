@@ -73,14 +73,16 @@ private final class SinkDisposer: Cancelable {
         }
     }
 
-    func dispose() {
+    func dispose()
+    {
         let previousState = fetchOr(self.state, DisposeState.disposed.rawValue)
 
         if (previousState & DisposeState.disposed.rawValue) != 0 {
             return
         }
 
-        if (previousState & DisposeState.sinkAndSubscriptionSet.rawValue) != 0 {
+        if (previousState & DisposeState.sinkAndSubscriptionSet.rawValue) != 0
+        {
             guard let sink = self.sink else {
                 rxFatalError("Sink not set")
             }
@@ -96,5 +98,6 @@ private final class SinkDisposer: Cancelable {
         }
     }
 }
+
 
 

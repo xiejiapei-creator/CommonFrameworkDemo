@@ -7,14 +7,19 @@
 //
 
 /// Base class for all disposables.
-public class DisposeBase {
-    init() {
+
+// 继承了DisposeBase，实现内存的引用计数
+public class DisposeBase
+{
+    init()
+    {
 #if TRACE_RESOURCES
     _ = Resources.incrementTotal()
 #endif
     }
     
-    deinit {
+    deinit
+    {
 #if TRACE_RESOURCES
     _ = Resources.decrementTotal()
 #endif

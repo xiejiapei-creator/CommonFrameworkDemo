@@ -12,10 +12,15 @@ import RxCocoa
 class ViewController: UIViewController
 {
     var actionButton: UIButton! = UIButton(frame: CGRect(x: 130, y: 100, width: 100, height: 50))
-    var tittleLabel: UILabel! = UILabel(frame: CGRect(x: 130, y: 200, width: 100, height: 50))
+    var titleLabel: UILabel! = UILabel(frame: CGRect(x: 130, y: 200, width: 100, height: 50))
     let disposeBag = DisposeBag()
     let lock = NSLock()
     var array = NSMutableArray()
+    var intervalObservable: Observable<Int>!
+    var startAction: UIButton! = UIButton(frame: CGRect(x: 130, y: 300, width: 100, height: 50))
+    var stopAction: UIButton! = UIButton(frame: CGRect(x: 130, y: 380, width: 100, height: 50))
+    var timer: Timer?
+    let proxy: Proxy = Proxy()
     
     override func viewDidLoad()
     {
@@ -26,10 +31,18 @@ class ViewController: UIViewController
         //coreProcess()
         
         // Scheduler调度者
-        scheduler()
+        //scheduler()
+        
+        // Dispose销毁者
+        //disposeIntervalObservable()
+        //disposeLimitObservable()
+        
+        // 中介者模式
+        //timerCircularReference()
+        proxySolveCircularReference()
     }
     
-    // RxSwift核心流程
+    // MARK: RxSwift核心流程
     func coreProcess()
     {
         // 1.创建序列
@@ -52,7 +65,7 @@ class ViewController: UIViewController
             onDisposed: { print("销毁观察者") })
     }
     
-    // Scheduler调度者
+    // MARK: Scheduler调度者
     func scheduler()
     {
         // RXSwift内部处理了线程问题
@@ -67,7 +80,80 @@ class ViewController: UIViewController
         }
     }
     
+    // MARK: Dispose销毁者
+    func disposeIntervalObservable()
+    {
+        self.intervalObservable = Observable<Int>.interval(.seconds(1), scheduler: MainScheduler.init())
+        
+        let dispose = self.intervalObservable.subscribe(onNext:
+        { (num) in
+            self.titleLabel.text = String(num)
+        })
+        
+        _ = self.stopAction.rx.tap.subscribe(onNext: {
+            print("停止计时")
+            dispose.dispose()
+        })
+    }
     
+    func disposeLimitObservable()
+    {
+        // 创建序列
+        let observable = Observable<Any>.create
+        { (observer) -> Disposable in
+            observer.onNext("谢佳培")
+            observer.onCompleted()
+            //observer.onError(...)
+            // 在完成后就已经销毁了序列，不会再发送下面的信号了
+            observer.onNext("王小清")
+            return Disposables.create { print("销毁释放了")}
+        }
+        
+        // 订阅信号
+        let dispose = observable.subscribe(onNext: { (anything) in
+            print("收到的内容为:\(anything)")
+        }, onError: { (error) in
+            print("错误信息:\(error)")
+        }, onCompleted: {
+            print("完成了")
+        }) {
+            print("销毁回调")
+        }
+        
+        print("执行完毕")
+        //dispose.dispose()
+    }
+    
+    // MARK: 中介者模式
+    // 使用Timer时的循环引用问题
+    func timerCircularReference()
+    {
+        //self.timer = Timer.init(timeInterval: 1, target: self, selector: #selector(timerFire), userInfo: nil, repeats: true)
+        
+        self.timer = Timer.init(timeInterval: 1, repeats: true, block:
+        { (timer) in
+            print("火箭🚀发射 \(timer)")
+        })
+        
+        RunLoop.current.add(self.timer!, forMode: .common)
+    }
+    
+    // 使用Proxy中介者解决Timer的循环引用问题
+    func proxySolveCircularReference()
+    {
+        let selector = NSSelectorFromString("timerFire")
+        self.proxy.scheduledTimer(timeInterval: 1, target: self, selector: selector, userInfo: nil, repeats: true)
+    }
+
+    @objc func timerFire()
+    {
+        print("火箭🚀发射")
+    }
+    
+    deinit
+    {
+        print("\(self) 界面销毁了")
+    }
     
     func createSubview()
     {
@@ -75,12 +161,18 @@ class ViewController: UIViewController
         actionButton.backgroundColor = .orange
         view.addSubview(actionButton)
         
-        tittleLabel.text = "文本"
-        tittleLabel.backgroundColor = .yellow
-        view.addSubview(tittleLabel)
+        titleLabel.text = "文本"
+        titleLabel.backgroundColor = .yellow
+        view.addSubview(titleLabel)
+        
+        startAction.setTitle("开始计时器", for: .normal)
+        startAction.backgroundColor = .orange
+        view.addSubview(startAction)
+        
+        stopAction.setTitle("停止计时器", for: .normal)
+        stopAction.backgroundColor = .orange
+        view.addSubview(stopAction)
     }
 }
-
-
 
 

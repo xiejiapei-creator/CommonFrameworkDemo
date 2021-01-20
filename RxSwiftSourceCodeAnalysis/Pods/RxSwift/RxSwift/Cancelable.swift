@@ -7,7 +7,10 @@
 //
 
 /// Represents disposable resource with state tracking.
-public protocol Cancelable : Disposable {
-    /// Was resource disposed.
+
+// 实现了协议Cancelable
+public protocol Cancelable : Disposable
+{
+    // 是否销毁了
     var isDisposed: Bool { get }
 }

@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 50;
+	objectVersion = 51;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -14,6 +14,7 @@
 		E90C2E4225B01F6400D55844 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = E90C2E4025B01F6400D55844 /* Main.storyboard */; };
 		E90C2E4425B01F6500D55844 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E90C2E4325B01F6500D55844 /* Assets.xcassets */; };
 		E90C2E4725B01F6500D55844 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = E90C2E4525B01F6500D55844 /* LaunchScreen.storyboard */; };
+		E9E9918125B7082C00618F1C /* Proxy.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9E9918025B7082C00618F1C /* Proxy.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -27,6 +28,7 @@
 		E90C2E4325B01F6500D55844 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		E90C2E4625B01F6500D55844 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		E90C2E4825B01F6500D55844 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		E9E9918025B7082C00618F1C /* Proxy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Proxy.swift; sourceTree = "<group>"; };
 		FE7DE40EE932E4ADFBA66187 /* Pods-RxSwiftSourceCodeAnalysis.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RxSwiftSourceCodeAnalysis.debug.xcconfig"; path = "Target Support Files/Pods-RxSwiftSourceCodeAnalysis/Pods-RxSwiftSourceCodeAnalysis.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -72,6 +74,7 @@
 			isa = PBXGroup;
 			children = (
 				E90C2E3E25B01F6400D55844 /* ViewController.swift */,
+				E9E9918025B7082C00618F1C /* Proxy.swift */,
 				E90C2E4F25B01F6900D55844 /* SupportingFiles */,
 				E90C2E4825B01F6500D55844 /* Info.plist */,
 			);
@@ -96,7 +99,6 @@
 				FE7DE40EE932E4ADFBA66187 /* Pods-RxSwiftSourceCodeAnalysis.debug.xcconfig */,
 				AD2434234F8FF5743973DF46 /* Pods-RxSwiftSourceCodeAnalysis.release.xcconfig */,
 			);
-			name = Pods;
 			path = Pods;
 			sourceTree = "<group>";
 		};
@@ -214,6 +216,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E9E9918125B7082C00618F1C /* Proxy.swift in Sources */,
 				E90C2E3F25B01F6400D55844 /* ViewController.swift in Sources */,
 				E90C2E3B25B01F6400D55844 /* AppDelegate.swift in Sources */,
 				E90C2E3D25B01F6400D55844 /* SceneDelegate.swift in Sources */,

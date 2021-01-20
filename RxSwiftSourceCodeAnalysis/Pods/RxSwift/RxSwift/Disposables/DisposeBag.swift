@@ -27,7 +27,8 @@ or create a new one in its place.
 
 In case explicit disposal is necessary, there is also `CompositeDisposable`.
 */
-public final class DisposeBag: DisposeBase {
+public final class DisposeBag: DisposeBase
+{
     
     private var lock = SpinLock()
     
@@ -43,7 +44,8 @@ public final class DisposeBag: DisposeBase {
     /// Adds `disposable` to be disposed when dispose bag is being deinited.
     ///
     /// - parameter disposable: Disposable to add.
-    public func insert(_ disposable: Disposable) {
+    public func insert(_ disposable: Disposable)
+    {
         self._insert(disposable)?.dispose()
     }
     
@@ -60,16 +62,20 @@ public final class DisposeBag: DisposeBase {
     }
 
     /// This is internal on purpose, take a look at `CompositeDisposable` instead.
-    private func dispose() {
+    private func dispose()
+    {
         let oldDisposables = self._dispose()
 
-        for disposable in oldDisposables {
+        for disposable in oldDisposables
+        {
             disposable.dispose()
         }
     }
 
-    private func _dispose() -> [Disposable] {
-        self.lock.performLocked {
+    private func _dispose() -> [Disposable]
+    {
+        self.lock.performLocked
+        {
             let disposables = self.disposables
             
             self.disposables.removeAll(keepingCapacity: false)
@@ -132,3 +138,5 @@ extension DisposeBag {
       }
     }
 }
+
+
