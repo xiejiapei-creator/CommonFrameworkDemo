@@ -26,7 +26,8 @@ import Foundation
 
 /// `Request` is the common superclass of all Alamofire request types and provides common state, delegate, and callback
 /// handling.
-public class Request {
+public class Request
+{
     /// State of the `Request`, with managed transitions between states set when calling `resume()`, `suspend()`, or
     /// `cancel()` on the `Request`.
     public enum State {
@@ -67,9 +68,9 @@ public class Request {
 
     /// `UUID` providing a unique identifier for the `Request`, used in the `Hashable` and `Equatable` conformances.
     public let id: UUID
-    /// The serial queue for all internal async actions.
+    // 所有内部异步操作的串行队列
     public let underlyingQueue: DispatchQueue
-    /// The queue used for all serialization actions. By default it's a serial queue that targets `underlyingQueue`.
+    // 用于所有序列化操作的队列。默认情况下，它是一个以 underlyingQueue 为目标的串行队列
     public let serializationQueue: DispatchQueue
     /// `EventMonitor` used for event callbacks.
     public let eventMonitor: EventMonitor?
@@ -379,7 +380,8 @@ public class Request {
     }
 
     /// Called when resumption is completed.
-    func didResume() {
+    func didResume()
+    {
         dispatchPrecondition(condition: .onQueue(underlyingQueue))
 
         eventMonitor?.requestDidResume(self)
@@ -388,7 +390,8 @@ public class Request {
     /// Called when a `URLSessionTask` is resumed on behalf of the instance.
     ///
     /// - Parameter task: The `URLSessionTask` resumed.
-    func didResumeTask(_ task: URLSessionTask) {
+    func didResumeTask(_ task: URLSessionTask)
+    {
         dispatchPrecondition(condition: .onQueue(underlyingQueue))
 
         eventMonitor?.request(self, didResumeTask: task)
@@ -656,16 +659,12 @@ public class Request {
 
     // MARK: - Public API
 
-    // These APIs are callable from any queue.
-
-    // MARK: State
-
-    /// Cancels the instance. Once cancelled, a `Request` can no longer be resumed or suspended.
-    ///
-    /// - Returns: The instance.
     @discardableResult
-    public func cancel() -> Self {
-        $mutableState.write { mutableState in
+    // 取消请求
+    public func cancel() -> Self
+    {
+        $mutableState.write
+        { mutableState in
             guard mutableState.state.canTransitionTo(.cancelled) else { return }
 
             mutableState.state = .cancelled
@@ -679,6 +678,7 @@ public class Request {
 
             // Resume to ensure metrics are gathered.
             task.resume()
+            // 取消
             task.cancel()
             underlyingQueue.async { self.didCancelTask(task) }
         }
@@ -690,29 +690,33 @@ public class Request {
     ///
     /// - Returns: The instance.
     @discardableResult
-    public func suspend() -> Self {
-        $mutableState.write { mutableState in
+    public func suspend() -> Self
+    {
+        $mutableState.write
+        { mutableState in
+            // 如果不能暂停, 那么就跳过
             guard mutableState.state.canTransitionTo(.suspended) else { return }
-
+            // 变更可变状态为暂停
             mutableState.state = .suspended
-
+            // 在下层队列中更新暂停状态，didSuspend()在暂停完成时调用
             underlyingQueue.async { self.didSuspend() }
-
+  
             guard let task = mutableState.tasks.last, task.state != .completed else { return }
-
+            // 调用真正的网络请求URLSessionTask的suspend()方法
             task.suspend()
+            // 在下层队列中更新暂停状态，didSuspendTask()在URLSessionTask暂停时调用
             underlyingQueue.async { self.didSuspendTask(task) }
         }
 
         return self
     }
 
-    /// Resumes the instance.
-    ///
-    /// - Returns: The instance.
+    // 继续请求
     @discardableResult
-    public func resume() -> Self {
-        $mutableState.write { mutableState in
+    public func resume() -> Self
+    {
+        $mutableState.write
+        { mutableState in
             guard mutableState.state.canTransitionTo(.resumed) else { return }
 
             mutableState.state = .resumed
@@ -1031,7 +1035,8 @@ extension Request {
 }
 
 /// Protocol abstraction for `Request`'s communication back to the `SessionDelegate`.
-public protocol RequestDelegate: AnyObject {
+public protocol RequestDelegate: AnyObject
+{
     /// `URLSessionConfiguration` used to create the underlying `URLSessionTask`s.
     var sessionConfiguration: URLSessionConfiguration { get }
 
@@ -1064,27 +1069,17 @@ public protocol RequestDelegate: AnyObject {
 // MARK: - DataRequest
 
 /// `Request` subclass which handles in-memory `Data` download using `URLSessionDataTask`.
-public class DataRequest: Request {
-    /// `URLRequestConvertible` value used to create `URLRequest`s for this instance.
+public class DataRequest: Request
+{
+    // URLRequestConvertible值，用于为此实例创建URLRequest
     public let convertible: URLRequestConvertible
-    /// `Data` read from the server so far.
+    // 目前为止从服务器读取的数据
     public var data: Data? { mutableData }
 
-    /// Protected storage for the `Data` read by the instance.
+    // 可变数据类型，将每次从服务器读取的数据添加到其后
     @Protected
     private var mutableData: Data? = nil
 
-    /// Creates a `DataRequest` using the provided parameters.
-    ///
-    /// - Parameters:
-    ///   - id:                 `UUID` used for the `Hashable` and `Equatable` implementations. `UUID()` by default.
-    ///   - convertible:        `URLRequestConvertible` value used to create `URLRequest`s for this instance.
-    ///   - underlyingQueue:    `DispatchQueue` on which all internal `Request` work is performed.
-    ///   - serializationQueue: `DispatchQueue` on which all serialization work is performed. By default targets
-    ///                         `underlyingQueue`, but can be passed another queue from a `Session`.
-    ///   - eventMonitor:       `EventMonitor` called for event callbacks from internal `Request` actions.
-    ///   - interceptor:        `RequestInterceptor` used throughout the request lifecycle.
-    ///   - delegate:           `RequestDelegate` that provides an interface to actions not performed by the `Request`.
     init(id: UUID = UUID(),
          convertible: URLRequestConvertible,
          underlyingQueue: DispatchQueue,
@@ -1102,34 +1097,42 @@ public class DataRequest: Request {
                    delegate: delegate)
     }
 
-    override func reset() {
+    // 重置请求
+    override func reset()
+    {
         super.reset()
 
         mutableData = nil
     }
 
-    /// Called when `Data` is received by this instance.
-    ///
-    /// - Note: Also calls `updateDownloadProgress`.
-    ///
-    /// - Parameter data: The `Data` received.
-    func didReceive(data: Data) {
-        if self.data == nil {
+    // 当此实例接收到Data时调用，在更新下载进度的时候也会被调用
+    func didReceive(data: Data)
+    {
+        if self.data == nil
+        {
+            // 第一次拿到数据
             mutableData = data
-        } else {
+        }
+        else
+        {
+            // 拼接之后请求到的数据
             $mutableData.write { $0?.append(data) }
         }
 
+        // 更新下载进度
         updateDownloadProgress()
     }
 
-    override func task(for request: URLRequest, using session: URLSession) -> URLSessionTask {
+    // 根据request获取dataTask
+    override func task(for request: URLRequest, using session: URLSession) -> URLSessionTask
+    {
         let copiedRequest = request
         return session.dataTask(with: copiedRequest)
     }
 
-    /// Called to updated the `downloadProgress` of the instance.
-    func updateDownloadProgress() {
+    // 更新下载进度
+    func updateDownloadProgress()
+    {
         let totalBytesReceived = Int64(data?.count ?? 0)
         let totalBytesExpected = task?.response?.expectedContentLength ?? NSURLSessionTransferSizeUnknown
 
@@ -1139,16 +1142,12 @@ public class DataRequest: Request {
         downloadProgressHandler?.queue.async { self.downloadProgressHandler?.handler(self.downloadProgress) }
     }
 
-    /// Validates the request, using the specified closure.
-    ///
-    /// - Note: If validation fails, subsequent calls to response handlers will have an associated error.
-    ///
-    /// - Parameter validation: `Validation` closure used to validate the response.
-    ///
-    /// - Returns:              The instance.
+    // 使用指定的闭包验证请求
     @discardableResult
-    public func validate(_ validation: @escaping Validation) -> Self {
-        let validator: () -> Void = { [unowned self] in
+    public func validate(_ validation: @escaping Validation) -> Self
+    {
+        let validator: () -> Void =
+        { [unowned self] in
             guard self.error == nil, let response = self.response else { return }
 
             let result = validation(self.request, response, self.data)
@@ -1171,7 +1170,8 @@ public class DataRequest: Request {
 // MARK: - DataStreamRequest
 
 /// `Request` subclass which streams HTTP response `Data` through a `Handler` closure.
-public final class DataStreamRequest: Request {
+public final class DataStreamRequest: Request
+{
     /// Closure type handling `DataStreamRequest.Stream` values.
     public typealias Handler<Success, Failure: Error> = (Stream<Success, Failure>) throws -> Void
 
@@ -1439,7 +1439,8 @@ extension DataStreamRequest.Stream {
 // MARK: - DownloadRequest
 
 /// `Request` subclass which downloads `Data` to a file on disk using `URLSessionDownloadTask`.
-public class DownloadRequest: Request {
+public class DownloadRequest: Request
+{
     /// A set of options to be executed prior to moving a downloaded file from the temporary `URL` to the destination
     /// `URL`.
     public struct Options: OptionSet {
@@ -1735,7 +1736,8 @@ public class DownloadRequest: Request {
 // MARK: - UploadRequest
 
 /// `DataRequest` subclass which handles `Data` upload from memory, file, or stream using `URLSessionUploadTask`.
-public class UploadRequest: DataRequest {
+public class UploadRequest: DataRequest
+{
     /// Type describing the origin of the upload, whether `Data`, file, or stream.
     public enum Uploadable {
         /// Upload from the provided `Data` value.
@@ -1864,7 +1866,8 @@ public class UploadRequest: DataRequest {
 }
 
 /// A type that can produce an `UploadRequest.Uploadable` value.
-public protocol UploadableConvertible {
+public protocol UploadableConvertible
+{
     /// Produces an `UploadRequest.Uploadable` value from the instance.
     ///
     /// - Returns: The `UploadRequest.Uploadable`.
@@ -1880,3 +1883,12 @@ extension UploadRequest.Uploadable: UploadableConvertible {
 
 /// A type that can be converted to an upload, whether from an `UploadRequest.Uploadable` or `URLRequestConvertible`.
 public protocol UploadConvertible: UploadableConvertible & URLRequestConvertible {}
+
+
+
+
+
+
+
+
+

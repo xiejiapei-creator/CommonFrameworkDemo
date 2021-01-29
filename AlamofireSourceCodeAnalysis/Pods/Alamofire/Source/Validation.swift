@@ -24,7 +24,8 @@
 
 import Foundation
 
-extension Request {
+extension Request
+{
     // MARK: Helper Types
 
     fileprivate typealias ErrorReason = AFError.ResponseValidationFailureReason
@@ -78,13 +79,20 @@ extension Request {
 
     // MARK: Status Code
 
+    // acceptableStatusCodes为我们实际在validate中传入的statusCode数组，在例子中为[200]
     fileprivate func validate<S: Sequence>(statusCode acceptableStatusCodes: S,
                                            response: HTTPURLResponse)
         -> ValidationResult
-        where S.Iterator.Element == Int {
-        if acceptableStatusCodes.contains(response.statusCode) {
+        where S.Iterator.Element == Int
+    {
+        // 若validate传入code包含response响应的code则认证成功
+        if acceptableStatusCodes.contains(response.statusCode)
+        {
             return .success(())
-        } else {
+        }
+        // 若不包括，则返回失败，抛出AFError
+        else
+        {
             let reason: ErrorReason = .unacceptableStatusCode(code: response.statusCode)
             return .failure(AFError.responseValidationFailed(reason: reason))
         }
@@ -96,7 +104,8 @@ extension Request {
                                            response: HTTPURLResponse,
                                            data: Data?)
         -> ValidationResult
-        where S.Iterator.Element == String {
+        where S.Iterator.Element == String
+    {
         guard let data = data, !data.isEmpty else { return .success(()) }
 
         return validate(contentType: acceptableContentTypes, response: response)
@@ -143,45 +152,27 @@ extension Request {
 
 // MARK: -
 
-extension DataRequest {
-    /// A closure used to validate a request that takes a URL request, a URL response and data, and returns whether the
-    /// request was valid.
+extension DataRequest
+{
+
     public typealias Validation = (URLRequest?, HTTPURLResponse, Data?) -> ValidationResult
 
-    /// Validates that the response has a status code in the specified sequence.
-    ///
-    /// If validation fails, subsequent calls to response handlers will have an associated error.
-    ///
-    /// - Parameter statusCode: `Sequence` of acceptable response status codes.
-    ///
-    /// - Returns:              The instance.
     @discardableResult
-    public func validate<S: Sequence>(statusCode acceptableStatusCodes: S) -> Self where S.Iterator.Element == Int {
+    public func validate<S: Sequence>(statusCode acceptableStatusCodes: S) -> Self where S.Iterator.Element == Int
+    {
         validate { [unowned self] _, response, _ in
             self.validate(statusCode: acceptableStatusCodes, response: response)
         }
     }
 
-    /// Validates that the response has a content type in the specified sequence.
-    ///
-    /// If validation fails, subsequent calls to response handlers will have an associated error.
-    ///
-    /// - parameter contentType: The acceptable content types, which may specify wildcard types and/or subtypes.
-    ///
-    /// - returns: The request.
     @discardableResult
-    public func validate<S: Sequence>(contentType acceptableContentTypes: @escaping @autoclosure () -> S) -> Self where S.Iterator.Element == String {
+    public func validate<S: Sequence>(contentType acceptableContentTypes: @escaping @autoclosure () -> S) -> Self where S.Iterator.Element == String
+    {
         validate { [unowned self] _, response, data in
             self.validate(contentType: acceptableContentTypes(), response: response, data: data)
         }
     }
 
-    /// Validates that the response has a status code in the default acceptable range of 200...299, and that the content
-    /// type matches any specified in the Accept HTTP header field.
-    ///
-    /// If validation fails, subsequent calls to response handlers will have an associated error.
-    ///
-    /// - returns: The request.
     @discardableResult
     public func validate() -> Self {
         let contentTypes: () -> [String] = { [unowned self] in
@@ -191,7 +182,8 @@ extension DataRequest {
     }
 }
 
-extension DataStreamRequest {
+extension DataStreamRequest
+{
     /// A closure used to validate a request that takes a `URLRequest` and `HTTPURLResponse` and returns whether the
     /// request was valid.
     public typealias Validation = (_ request: URLRequest?, _ response: HTTPURLResponse) -> ValidationResult
@@ -241,7 +233,8 @@ extension DataStreamRequest {
 
 // MARK: -
 
-extension DownloadRequest {
+extension DownloadRequest
+{
     /// A closure used to validate a request that takes a URL request, a URL response, a temporary URL and a
     /// destination URL, and returns whether the request was valid.
     public typealias Validation = (_ request: URLRequest?,
@@ -300,3 +293,6 @@ extension DownloadRequest {
         return validate(statusCode: acceptableStatusCodes).validate(contentType: contentTypes())
     }
 }
+
+
+

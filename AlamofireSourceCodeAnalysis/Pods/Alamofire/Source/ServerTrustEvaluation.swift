@@ -24,12 +24,13 @@
 
 import Foundation
 
-/// Responsible for managing the mapping of `ServerTrustEvaluating` values to given hosts.
-open class ServerTrustManager {
+// 安全策略的管理
+open class ServerTrustManager
+{
     /// Determines whether all hosts for this `ServerTrustManager` must be evaluated. `true` by default.
     public let allHostsMustBeEvaluated: Bool
 
-    /// The dictionary of policies mapped to a particular host.
+    // 映射到特定主机的策略字典.
     public let evaluators: [String: ServerTrustEvaluating]
 
     /// Initializes the `ServerTrustManager` instance with the given evaluators.
@@ -48,19 +49,13 @@ open class ServerTrustManager {
         self.evaluators = evaluators
     }
 
-    /// Returns the `ServerTrustEvaluating` value for the given host, if one is set.
-    ///
-    /// By default, this method will return the policy that perfectly matches the given host. Subclasses could override
-    /// this method and implement more complex mapping implementations such as wildcards.
-    ///
-    /// - Parameter host: The host to use when searching for a matching policy.
-    ///
-    /// - Returns:        The `ServerTrustEvaluating` value for the given host if found, `nil` otherwise.
-    /// - Throws:         `AFError.serverTrustEvaluationFailed` if `allHostsMustBeEvaluated` is `true` and no matching
-    ///                   evaluators are found.
-    open func serverTrustEvaluator(forHost host: String) throws -> ServerTrustEvaluating? {
-        guard let evaluator = evaluators[host] else {
-            if allHostsMustBeEvaluated {
+    // 根据host读取策略
+    open func serverTrustEvaluator(forHost host: String) throws -> ServerTrustEvaluating?
+    {
+        guard let evaluator = evaluators[host] else
+        {
+            if allHostsMustBeEvaluated
+            {
                 throw AFError.serverTrustEvaluationFailed(reason: .noRequiredEvaluator(host: host))
             }
 
@@ -71,12 +66,13 @@ open class ServerTrustManager {
     }
 }
 
-/// A protocol describing the API used to evaluate server trusts.
-public protocol ServerTrustEvaluating {
+// 描述用于评估服务器信任的API的协议
+public protocol ServerTrustEvaluating
+{
     #if os(Linux)
     // Implement this once Linux has API for evaluating server trusts.
     #else
-    /// Evaluates the given `SecTrust` value for the given `host`.
+    ///  为给定的“host”计算给定的“SecTrust”值。
     ///
     /// - Parameters:
     ///   - trust: The `SecTrust` value to evaluate.
@@ -92,7 +88,8 @@ public protocol ServerTrustEvaluating {
 /// An evaluator which uses the default server trust evaluation while allowing you to control whether to validate the
 /// host provided by the challenge. Applications are encouraged to always validate the host in production environments
 /// to guarantee the validity of the server's certificate chain.
-public final class DefaultTrustEvaluator: ServerTrustEvaluating {
+public final class DefaultTrustEvaluator: ServerTrustEvaluating
+{
     private let validateHost: Bool
 
     /// Creates a `DefaultTrustEvaluator`.
@@ -116,7 +113,8 @@ public final class DefaultTrustEvaluator: ServerTrustEvaluating {
 /// Apple platforms did not start testing for revoked certificates automatically until iOS 10.1, macOS 10.12 and tvOS
 /// 10.1 which is demonstrated in our TLS tests. Applications are encouraged to always validate the host in production
 /// environments to guarantee the validity of the server's certificate chain.
-public final class RevocationTrustEvaluator: ServerTrustEvaluating {
+public final class RevocationTrustEvaluator: ServerTrustEvaluating
+{
     /// Represents the options to be use when evaluating the status of a certificate.
     /// Only Revocation Policy Constants are valid, and can be found in [Apple's documentation](https://developer.apple.com/documentation/security/certificate_key_and_trust_services/policies/1563600-revocation_policy_constants).
     public struct Options: OptionSet {
@@ -193,7 +191,8 @@ public final class RevocationTrustEvaluator: ServerTrustEvaluating {
 /// pinning provides a very secure form of server trust validation mitigating most, if not all, MITM attacks.
 /// Applications are encouraged to always validate the host and require a valid certificate chain in production
 /// environments.
-public final class PinnedCertificatesTrustEvaluator: ServerTrustEvaluating {
+public final class PinnedCertificatesTrustEvaluator: ServerTrustEvaluating
+{
     private let certificates: [SecCertificate]
     private let acceptSelfSignedCertificates: Bool
     private let performDefaultValidation: Bool
@@ -222,27 +221,32 @@ public final class PinnedCertificatesTrustEvaluator: ServerTrustEvaluating {
         self.validateHost = validateHost
     }
 
-    public func evaluate(_ trust: SecTrust, forHost host: String) throws {
+    public func evaluate(_ trust: SecTrust, forHost host: String) throws
+    {
         guard !certificates.isEmpty else {
             throw AFError.serverTrustEvaluationFailed(reason: .noCertificatesFound)
         }
 
-        if acceptSelfSignedCertificates {
+        if acceptSelfSignedCertificates
+        {
             try trust.af.setAnchorCertificates(certificates)
         }
 
-        if performDefaultValidation {
+        if performDefaultValidation
+        {
             try trust.af.performDefaultValidation(forHost: host)
         }
 
-        if validateHost {
+        if validateHost
+        {
             try trust.af.performValidation(forHost: host)
         }
 
         let serverCertificatesData = Set(trust.af.certificateData)
         let pinnedCertificatesData = Set(certificates.af.data)
         let pinnedCertificatesInServerData = !serverCertificatesData.isDisjoint(with: pinnedCertificatesData)
-        if !pinnedCertificatesInServerData {
+        if !pinnedCertificatesInServerData
+        {
             throw AFError.serverTrustEvaluationFailed(reason: .certificatePinningFailed(host: host,
                                                                                         trust: trust,
                                                                                         pinnedCertificates: certificates,
@@ -256,7 +260,8 @@ public final class PinnedCertificatesTrustEvaluator: ServerTrustEvaluating {
 /// public key pinning provides a very secure form of server trust validation mitigating most, if not all, MITM attacks.
 /// Applications are encouraged to always validate the host and require a valid certificate chain in production
 /// environments.
-public final class PublicKeysTrustEvaluator: ServerTrustEvaluating {
+public final class PublicKeysTrustEvaluator: ServerTrustEvaluating
+{
     private let keys: [SecKey]
     private let performDefaultValidation: Bool
     private let validateHost: Bool
@@ -317,7 +322,8 @@ public final class PublicKeysTrustEvaluator: ServerTrustEvaluating {
 
 /// Uses the provided evaluators to validate the server trust. The trust is only considered valid if all of the
 /// evaluators consider it valid.
-public final class CompositeTrustEvaluator: ServerTrustEvaluating {
+public final class CompositeTrustEvaluator: ServerTrustEvaluating
+{
     private let evaluators: [ServerTrustEvaluating]
 
     /// Creates a `CompositeTrustEvaluator`.
@@ -348,7 +354,8 @@ public typealias DisabledEvaluator = DisabledTrustEvaluator
 ///         certificates, as outlined in [this Apple tech note](https://developer.apple.com/library/archive/qa/qa1948/_index.html).
 ///
 /// **THIS EVALUATOR SHOULD NEVER BE USED IN PRODUCTION!**
-public final class DisabledTrustEvaluator: ServerTrustEvaluating {
+public final class DisabledTrustEvaluator: ServerTrustEvaluating
+{
     /// Creates an instance.
     public init() {}
 
@@ -377,10 +384,13 @@ extension Array where Element == ServerTrustEvaluating {
 }
 
 extension Bundle: AlamofireExtended {}
-extension AlamofireExtension where ExtendedType: Bundle {
-    /// Returns all valid `cer`, `crt`, and `der` certificates in the bundle.
-    public var certificates: [SecCertificate] {
-        paths(forResourcesOfTypes: [".cer", ".CER", ".crt", ".CRT", ".der", ".DER"]).compactMap { path in
+extension AlamofireExtension where ExtendedType: Bundle
+{
+    // 获取证书
+    public var certificates: [SecCertificate]
+    {
+        paths(forResourcesOfTypes: [".cer", ".CER", ".crt", ".CRT", ".der", ".DER"]).compactMap
+        { path in
             guard
                 let certificateData = try? Data(contentsOf: URL(fileURLWithPath: path)) as CFData,
                 let certificate = SecCertificateCreateWithData(nil, certificateData) else { return nil }
@@ -389,8 +399,9 @@ extension AlamofireExtension where ExtendedType: Bundle {
         }
     }
 
-    /// Returns all public keys for the valid certificates in the bundle.
-    public var publicKeys: [SecKey] {
+    // 返回包中有效证书的所有公钥
+    public var publicKeys: [SecKey]
+    {
         certificates.af.publicKeys
     }
 
@@ -436,7 +447,9 @@ extension AlamofireExtension where ExtendedType == SecTrust {
     ///
     /// - Returns: `self`, with the policy applied.
     /// - Throws: An `AFError.serverTrustEvaluationFailed` instance with a `.policyApplicationFailed` reason.
-    public func apply(policy: SecPolicy) throws -> SecTrust {
+    public func apply(policy: SecPolicy) throws -> SecTrust
+    {
+        // 为待验证的对象设置策略
         let status = SecTrustSetPolicies(type, policy)
 
         guard status.af.isSuccess else {
@@ -513,7 +526,8 @@ extension AlamofireExtension where ExtendedType == SecTrust {
     }
 
     /// The `Data` values for all certificates contained in `self`.
-    public var certificateData: [Data] {
+    public var certificateData: [Data]
+    {
         certificates.af.data
     }
 
@@ -549,7 +563,7 @@ extension AlamofireExtension where ExtendedType == SecTrust {
 
 extension SecPolicy: AlamofireExtended {}
 extension AlamofireExtension where ExtendedType == SecPolicy {
-    /// Creates a `SecPolicy` instance which will validate server certificates but not require a host name match.
+    // 创建策略，是否验证host
     public static let `default` = SecPolicyCreateSSL(true, nil)
 
     /// Creates a `SecPolicy` instance which will validate server certificates and much match the provided hostname.
@@ -617,3 +631,9 @@ extension AlamofireExtension where ExtendedType == SecTrustResultType {
         (type == .unspecified || type == .proceed)
     }
 }
+ 
+
+
+
+
+

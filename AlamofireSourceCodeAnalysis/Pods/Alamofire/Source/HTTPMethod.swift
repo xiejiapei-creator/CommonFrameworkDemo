@@ -22,10 +22,7 @@
 //  THE SOFTWARE.
 //
 
-/// Type representing HTTP methods. Raw `String` value is stored and compared case-sensitively, so
-/// `HTTPMethod.get != HTTPMethod(rawValue: "get")`.
-///
-/// See https://tools.ietf.org/html/rfc7231#section-4.3
+// http 头的定义
 public struct HTTPMethod: RawRepresentable, Equatable, Hashable
 {
     public static let connect = HTTPMethod(rawValue: "CONNECT")

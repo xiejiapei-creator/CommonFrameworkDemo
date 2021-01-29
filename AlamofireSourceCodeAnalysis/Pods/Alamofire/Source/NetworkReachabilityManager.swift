@@ -27,23 +27,20 @@
 import Foundation
 import SystemConfiguration
 
-/// The `NetworkReachabilityManager` class listens for reachability changes of hosts and addresses for both cellular and
-/// WiFi network interfaces.
-///
-/// Reachability can be used to determine background information about why a network operation failed, or to retry
-/// network requests when a connection is established. It should not be used to prevent a user from initiating a network
-/// request, as it's possible that an initial request may be required to establish reachability.
-open class NetworkReachabilityManager {
-    /// Defines the various states of network reachability.
-    public enum NetworkReachabilityStatus {
-        /// It is unknown whether the network is reachable.
+open class NetworkReachabilityManager
+{
+    // 网络连接状态明显要比网络类型范围更大，因此又增加了两个选项
+    public enum NetworkReachabilityStatus
+    {
+        // 表示当前的网络是未知的
         case unknown
-        /// The network is not reachable.
+        // 表示当前的网路不可达
         case notReachable
-        /// The network is reachable on the associated `ConnectionType`.
+        // 在关联的ConnectionType上可以访问网络
         case reachable(ConnectionType)
 
-        init(_ flags: SCNetworkReachabilityFlags) {
+        init(_ flags: SCNetworkReachabilityFlags)
+        {
             guard flags.isActuallyReachable else { self = .notReachable; return }
 
             var networkStatus: NetworkReachabilityStatus = .reachable(.ethernetOrWiFi)
@@ -53,17 +50,17 @@ open class NetworkReachabilityManager {
             self = networkStatus
         }
 
-        /// Defines the various connection types detected by reachability flags.
-        public enum ConnectionType {
-            /// The connection type is either over Ethernet or WiFi.
+        // 对于手机而言，我们需要的连接类型就两种
+        public enum ConnectionType
+        {
+            // 一种是WiFi网络
             case ethernetOrWiFi
-            /// The connection type is a cellular connection.
+            // 一种是蜂窝网络
             case cellular
         }
     }
 
-    /// A closure executed when the network reachability status changes. The closure takes a single argument: the
-    /// network reachability status.
+    // 监听器类型实质是一个闭包。当网络状态改变时，闭包会被调用。闭包只有一个参数，为网络可达性状态
     public typealias Listener = (NetworkReachabilityStatus) -> Void
 
     /// Default `NetworkReachabilityManager` for the zero address and a `listenerQueue` of `.main`.
@@ -71,33 +68,35 @@ open class NetworkReachabilityManager {
 
     // MARK: - Properties
 
-    /// Whether the network is currently reachable.
+    // 当前网络是可达的，要么是蜂窝网络，要么是WiFi连接
     open var isReachable: Bool { isReachableOnCellular || isReachableOnEthernetOrWiFi }
-
-    /// Whether the network is currently reachable over the cellular interface.
-    ///
-    /// - Note: Using this property to decide whether to make a high or low bandwidth request is not recommended.
-    ///         Instead, set the `allowsCellularAccess` on any `URLRequest`s being issued.
-    ///
+    // 表明当前网络是通过蜂窝网络连接
     open var isReachableOnCellular: Bool { status == .reachable(.cellular) }
-
-    /// Whether the network is currently reachable over Ethernet or WiFi interface.
+    // 表明当前网络是通过WiFi连接
     open var isReachableOnEthernetOrWiFi: Bool { status == .reachable(.ethernetOrWiFi) }
+    
+    
+    // 返回当前的网络状态
+    open var status: NetworkReachabilityStatus
+    {
+        flags.map(NetworkReachabilityStatus.init) ?? .unknown
+    }
 
-    /// `DispatchQueue` on which reachability will update.
+    // 监听器中代码执行所在的队列
     public let reachabilityQueue = DispatchQueue(label: "org.alamofire.reachabilityQueue")
 
-    /// Flags of the current reachability type, if any.
-    open var flags: SCNetworkReachabilityFlags? {
+    // 网络状态就是根据flags判断出来的
+    open var flags: SCNetworkReachabilityFlags?
+    {
+        // 有了它才能获取flags
         var flags = SCNetworkReachabilityFlags()
 
         return (SCNetworkReachabilityGetFlags(reachability, &flags)) ? flags : nil
     }
 
-    /// The current network reachability status.
-    open var status: NetworkReachabilityStatus {
-        flags.map(NetworkReachabilityStatus.init) ?? .unknown
-    }
+    // 可达性
+    private let reachability: SCNetworkReachability
+
 
     /// Mutable state storage.
     struct MutableState {
@@ -109,8 +108,7 @@ open class NetworkReachabilityManager {
         var previousStatus: NetworkReachabilityStatus?
     }
 
-    /// `SCNetworkReachability` instance providing notifications.
-    private let reachability: SCNetworkReachability
+
 
     /// Protected storage for mutable state.
     @Protected
@@ -118,23 +116,18 @@ open class NetworkReachabilityManager {
 
     // MARK: - Initialization
 
-    /// Creates an instance with the specified host.
-    ///
-    /// - Note: The `host` value must *not* contain a scheme, just the hostname.
-    ///
-    /// - Parameters:
-    ///   - host:          Host used to evaluate network reachability. Must *not* include the scheme (e.g. `https`).
-    public convenience init?(host: String) {
+    // 便利构造函数。通过传入一个主机地址验证可达性
+    public convenience init?(host: String)
+    {
         guard let reachability = SCNetworkReachabilityCreateWithName(nil, host) else { return nil }
 
         self.init(reachability: reachability)
     }
 
-    /// Creates an instance that monitors the address 0.0.0.0.
-    ///
-    /// Reachability treats the 0.0.0.0 address as a special token that causes it to monitor the general routing
-    /// status of the device, both IPv4 and IPv6.
-    public convenience init?() {
+    // 依靠监听0.0.0.0来构造
+    // 可达性将0.0.0.0视为一个特殊的地址，因为它会监听设备的路由信息，在 ipv4 和 ipv6 下都可以使用
+    public convenience init?()
+    {
         var zero = sockaddr()
         zero.sa_len = UInt8(MemoryLayout<sockaddr>.size)
         zero.sa_family = sa_family_t(AF_INET)
@@ -144,53 +137,60 @@ open class NetworkReachabilityManager {
         self.init(reachability: reachability)
     }
 
-    private init(reachability: SCNetworkReachability) {
+    // 通过指定 SCNetworkReachability 来初始化
+    private init(reachability: SCNetworkReachability)
+    {
         self.reachability = reachability
     }
 
-    deinit {
+    // 在析构的时候会停止监听网络变化
+    deinit
+    {
         stopListening()
     }
 
     // MARK: - Listening
 
-    /// Starts listening for changes in network reachability status.
-    ///
-    /// - Note: Stops and removes any existing listener.
-    ///
-    /// - Parameters:
-    ///   - queue:    `DispatchQueue` on which to call the `listener` closure. `.main` by default.
-    ///   - listener: `Listener` closure called when reachability changes.
-    ///
-    /// - Returns: `true` if listening was started successfully, `false` otherwise.
-    @discardableResult
+    // 开始监听网络状况。启动失败会返回 false
+    @discardableResult //表明可以忽略返回值
     open func startListening(onQueue queue: DispatchQueue = .main,
-                             onUpdatePerforming listener: @escaping Listener) -> Bool {
+                             onUpdatePerforming listener: @escaping Listener) -> Bool
+    {
         stopListening()
 
-        $mutableState.write { state in
+        // 创建一个监听器
+        $mutableState.write
+        { state in
             state.listenerQueue = queue
             state.listener = listener
         }
-
+        
+        // 设置上下文
         var context = SCNetworkReachabilityContext(version: 0,
                                                    info: Unmanaged.passUnretained(self).toOpaque(),
                                                    retain: nil,
                                                    release: nil,
                                                    copyDescription: nil)
-        let callback: SCNetworkReachabilityCallBack = { _, flags, info in
+        // 创建回调函数
+        let callback: SCNetworkReachabilityCallBack =
+        { _, flags, info in
             guard let info = info else { return }
-
+            // 获取 NetworkReachabilityManager 的实例对象
             let instance = Unmanaged<NetworkReachabilityManager>.fromOpaque(info).takeUnretainedValue()
+            // 调用监听方法
             instance.notifyListener(flags)
         }
-
+        
+        // 注册队列
         let queueAdded = SCNetworkReachabilitySetDispatchQueue(reachability, reachabilityQueue)
+        // 注册回调函数
         let callbackAdded = SCNetworkReachabilitySetCallback(reachability, callback, &context)
 
-        // Manually call listener to give initial state, since the framework may not.
-        if let currentFlags = flags {
-            reachabilityQueue.async {
+        // 通知网络状态发送改变
+        if let currentFlags = flags
+        {
+            reachabilityQueue.async
+            {
                 self.notifyListener(currentFlags)
             }
         }
@@ -198,11 +198,16 @@ open class NetworkReachabilityManager {
         return callbackAdded && queueAdded
     }
 
-    /// Stops listening for changes in network reachability status.
-    open func stopListening() {
+    // 停止监控网络状态
+    open func stopListening()
+    {
+        // 取消回调
         SCNetworkReachabilitySetCallback(reachability, nil, nil)
+        // 取消队列
         SCNetworkReachabilitySetDispatchQueue(reachability, nil)
-        $mutableState.write { state in
+        // 销毁监听器
+        $mutableState.write
+        { state in
             state.listener = nil
             state.listenerQueue = nil
             state.previousStatus = nil
@@ -265,3 +270,7 @@ extension SCNetworkReachabilityFlags {
     }
 }
 #endif
+
+ 
+
+

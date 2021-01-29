@@ -29,50 +29,41 @@ public typealias AFDataResponse<Success> = DataResponse<Success, AFError>
 /// Default type of `DownloadResponse` returned by Alamofire, with an `AFError` `Failure` type.
 public typealias AFDownloadResponse<Success> = DownloadResponse<Success, AFError>
 
-/// Type used to store all values associated with a serialized response of a `DataRequest` or `UploadRequest`.
-public struct DataResponse<Success, Failure: Error> {
-    /// The URL request sent to the server.
+// 用于存储与DataRequest或UploadRequest的序列化响应关联的所有值的类型
+public struct DataResponse<Success, Failure: Error>
+{
+    // 表示该响应来源于哪个请求
     public let request: URLRequest?
 
-    /// The server's response to the URL request.
+    // 服务器返回的响应
     public let response: HTTPURLResponse?
 
-    /// The data returned by the server.
+    // 响应数据
     public let data: Data?
 
-    /// The final metrics of the response.
-    ///
-    /// - Note: Due to `FB7624529`, collection of `URLSessionTaskMetrics` on watchOS is currently disabled.`
-    ///
+    // 包含了请求和响应的统计信息
     public let metrics: URLSessionTaskMetrics?
 
-    /// The time taken to serialize the response.
+    // 序列化响应所用的时间
     public let serializationDuration: TimeInterval
 
-    /// The result of response serialization.
+    // 响应序列化的结果
     public let result: Result<Success, Failure>
 
-    /// Returns the associated value of the result if it is a success, `nil` otherwise.
+    // 如果结果成功，则返回结果的关联值，否则返回nil
     public var value: Success? { result.success }
 
-    /// Returns the associated error value if the result if it is a failure, `nil` otherwise.
+    // 在请求中可能发生的错误
     public var error: Failure? { result.failure }
 
-    /// Creates a `DataResponse` instance with the specified parameters derived from the response serialization.
-    ///
-    /// - Parameters:
-    ///   - request:               The `URLRequest` sent to the server.
-    ///   - response:              The `HTTPURLResponse` from the server.
-    ///   - data:                  The `Data` returned by the server.
-    ///   - metrics:               The `URLSessionTaskMetrics` of the `DataRequest` or `UploadRequest`.
-    ///   - serializationDuration: The duration taken by serialization.
-    ///   - result:                The `Result` of response serialization.
+    // 设计一个符合要求的构造函数
     public init(request: URLRequest?,
                 response: HTTPURLResponse?,
                 data: Data?,
                 metrics: URLSessionTaskMetrics?,
                 serializationDuration: TimeInterval,
-                result: Result<Success, Failure>) {
+                result: Result<Success, Failure>)
+    {
         self.request = request
         self.response = response
         self.data = data
@@ -84,18 +75,15 @@ public struct DataResponse<Success, Failure: Error> {
 
 // MARK: -
 
-extension DataResponse: CustomStringConvertible, CustomDebugStringConvertible {
-    /// The textual representation used when written to an output stream, which includes whether the result was a
-    /// success or failure.
-    public var description: String {
+extension DataResponse: CustomStringConvertible, CustomDebugStringConvertible
+{
+    public var description: String
+    {
         "\(result)"
     }
 
-    /// The debug textual representation used when written to an output stream, which includes (if available) a summary
-    /// of the `URLRequest`, the request's headers and body (if decodable as a `String` below 100KB); the
-    /// `HTTPURLResponse`'s status code, headers, and body; the duration of the network and serialization actions; and
-    /// the `Result` of serialization.
-    public var debugDescription: String {
+    public var debugDescription: String
+    {
         guard let urlRequest = request else { return "[Request]: None\n[Result]: \(result)" }
 
         let requestDescription = DebugDescription.description(of: urlRequest)
@@ -211,36 +199,34 @@ extension DataResponse {
 
 // MARK: -
 
-/// Used to store all data associated with a serialized response of a download request.
-public struct DownloadResponse<Success, Failure: Error> {
-    /// The URL request sent to the server.
+// 用于存储与下载请求的序列化响应相关联的所有数据
+public struct DownloadResponse<Success, Failure: Error>
+{
+    // 表示该响应来源于哪个请求
     public let request: URLRequest?
 
-    /// The server's response to the URL request.
+    // 服务器返回的响应
     public let response: HTTPURLResponse?
 
-    /// The final destination URL of the data returned from the server after it is moved.
+    // 从服务器返回的数据移动后的最终位置的URL
     public let fileURL: URL?
 
-    /// The resume data generated if the request was cancelled.
+    // 表示可恢复的数据，对于下载任务，如果因为某种原因下载中断或失败了，可以使用该数据恢复之前的下载
     public let resumeData: Data?
 
-    /// The final metrics of the response.
-    ///
-    /// - Note: Due to `FB7624529`, collection of `URLSessionTaskMetrics` on watchOS is currently disabled.`
-    ///
+    // 包含了请求和响应的统计信息
     public let metrics: URLSessionTaskMetrics?
 
-    /// The time taken to serialize the response.
+    // 序列化响应所用的时间
     public let serializationDuration: TimeInterval
 
-    /// The result of response serialization.
+    // 响应序列化的结果
     public let result: Result<Success, Failure>
 
-    /// Returns the associated value of the result if it is a success, `nil` otherwise.
+    // 如果结果成功，则返回结果的关联值，否则返回nil
     public var value: Success? { result.success }
 
-    /// Returns the associated error value if the result if it is a failure, `nil` otherwise.
+    // 在请求中可能发生的错误
     public var error: Failure? { result.failure }
 
     /// Creates a `DownloadResponse` instance with the specified parameters derived from response serialization.
@@ -452,3 +438,5 @@ extension String {
         return replacingOccurrences(of: "\n", with: "\n\(spaces)")
     }
 }
+
+

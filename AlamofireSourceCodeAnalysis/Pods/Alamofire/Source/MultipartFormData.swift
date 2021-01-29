@@ -30,41 +30,42 @@ import MobileCoreServices
 import CoreServices
 #endif
 
-/// Constructs `multipart/form-data` for uploads within an HTTP or HTTPS body. There are currently two ways to encode
-/// multipart form data. The first way is to encode the data directly in memory. This is very efficient, but can lead
-/// to memory issues if the dataset is too large. The second way is designed for larger datasets and will write all the
-/// data to a single file on disk with all the proper boundary segmentation. The second approach MUST be used for
-/// larger datasets such as video content, otherwise your app may run out of memory when trying to encode the dataset.
-///
-/// For more information on `multipart/form-data` in general, please refer to the RFC-2388 and RFC-2045 specs as well
-/// and the w3 form documentation.
-///
-/// - https://www.ietf.org/rfc/rfc2388.txt
-/// - https://www.ietf.org/rfc/rfc2045.txt
-/// - https://www.w3.org/TR/html401/interact/forms.html#h-17.13
-open class MultipartFormData {
+//
+open class MultipartFormData
+{
     // MARK: - Helper Types
 
-    enum EncodingCharacters {
+    // 换行回车：对"\r\n"的一个封装
+    enum EncodingCharacters
+    {
         static let crlf = "\r\n"
     }
 
-    enum BoundaryGenerator {
-        enum BoundaryType {
+    // 边界生产者
+    enum BoundaryGenerator
+    {
+        // 设计一个枚举来封装边界类型
+        enum BoundaryType
+        {
             case initial, encapsulated, final
         }
 
-        static func randomBoundary() -> String {
+        // 生成边界字符串
+        static func randomBoundary() -> String
+        {
             let first = UInt32.random(in: UInt32.min...UInt32.max)
             let second = UInt32.random(in: UInt32.min...UInt32.max)
 
             return String(format: "alamofire.boundary.%08x%08x", first, second)
         }
 
-        static func boundaryData(forBoundaryType boundaryType: BoundaryType, boundary: String) -> Data {
+        // 转换函数
+        static func boundaryData(forBoundaryType boundaryType: BoundaryType, boundary: String) -> Data
+        {
             let boundaryText: String
 
-            switch boundaryType {
+            switch boundaryType
+            {
             case .initial:
                 boundaryText = "--\(boundary)\(EncodingCharacters.crlf)"
             case .encapsulated:
@@ -77,14 +78,17 @@ open class MultipartFormData {
         }
     }
 
-    class BodyPart {
-        let headers: HTTPHeaders
-        let bodyStream: InputStream
-        let bodyContentLength: UInt64
-        var hasInitialBoundary = false
-        var hasFinalBoundary = false
+    // 对每一个body部分的描述，这个类只能在MultipartFormData内部访问，外部无法访问
+    class BodyPart
+    {
+        let headers: HTTPHeaders //对数据的描述
+        let bodyStream: InputStream //数据来源，Alamofire中使用InputStream统一进行处理
+        let bodyContentLength: UInt64 //该数据的大小
+        var hasInitialBoundary = false //是否包含初始边界
+        var hasFinalBoundary = false //是否包含结束边界
 
-        init(headers: HTTPHeaders, bodyStream: InputStream, bodyContentLength: UInt64) {
+        init(headers: HTTPHeaders, bodyStream: InputStream, bodyContentLength: UInt64)
+        {
             self.headers = headers
             self.bodyStream = bodyStream
             self.bodyContentLength = bodyContentLength
@@ -96,58 +100,39 @@ open class MultipartFormData {
     /// Default memory threshold used when encoding `MultipartFormData`, in bytes.
     public static let encodingMemoryThreshold: UInt64 = 10_000_000
 
-    /// The `Content-Type` header value containing the boundary used to generate the `multipart/form-data`.
+    // 通过Content-Type来说明当前数据的类型为multipart/form-data，这样服务器就知道客户端将要发送的数据是多表单了
     open lazy var contentType: String = "multipart/form-data; boundary=\(self.boundary)"
 
-    /// The content length of all body parts used to generate the `multipart/form-data` not including the boundaries.
+    // 获取数据的大小，该属性是一个计算属性
     public var contentLength: UInt64 { bodyParts.reduce(0) { $0 + $1.bodyContentLength } }
 
-    /// The boundary used to separate the body parts in the encoded form data.
+    // 表示边界，在初始化中会使用BoundaryGenerator来生成一个边界字符串
     public let boundary: String
 
     let fileManager: FileManager
 
+    // 是一个集合，包含了每一个数据的封装对象BodyPart
     private var bodyParts: [BodyPart]
     private var bodyPartError: AFError?
+    // 设置stream传输的buffer大小
     private let streamBufferSize: Int
 
     // MARK: - Lifecycle
 
-    /// Creates an instance.
-    ///
-    /// - Parameters:
-    ///   - fileManager: `FileManager` to use for file operations, if needed.
-    ///   - boundary: Boundary `String` used to separate body parts.
-    public init(fileManager: FileManager = .default, boundary: String? = nil) {
+    // 初始化方法
+    public init(fileManager: FileManager = .default, boundary: String? = nil)
+    {
         self.fileManager = fileManager
         self.boundary = boundary ?? BoundaryGenerator.randomBoundary()
         bodyParts = []
-
-        //
-        // The optimal read/write buffer size in bytes for input and output streams is 1024 (1KB). For more
-        // information, please refer to the following article:
-        //   - https://developer.apple.com/library/mac/documentation/Cocoa/Conceptual/Streams/Articles/ReadingInputStreams.html
-        //
         streamBufferSize = 1024
     }
 
     // MARK: - Body Parts
 
-    /// Creates a body part from the data and appends it to the instance.
-    ///
-    /// The body part data will be encoded using the following format:
-    ///
-    /// - `Content-Disposition: form-data; name=#{name}; filename=#{filename}` (HTTP Header)
-    /// - `Content-Type: #{mimeType}` (HTTP Header)
-    /// - Encoded file data
-    /// - Multipart form boundary
-    ///
-    /// - Parameters:
-    ///   - data:     `Data` to encoding into the instance.
-    ///   - name:     Name to associate with the `Data` in the `Content-Disposition` HTTP header.
-    ///   - fileName: Filename to associate with the `Data` in the `Content-Disposition` HTTP header.
-    ///   - mimeType: MIME type to associate with the data in the `Content-Type` HTTP header.
-    public func append(_ data: Data, withName name: String, fileName: String? = nil, mimeType: String? = nil) {
+    // 传入的数据是个Data类型
+    public func append(_ data: Data, withName name: String, fileName: String? = nil, mimeType: String? = nil)
+    {
         let headers = contentHeaders(withName: name, fileName: fileName, mimeType: mimeType)
         let stream = InputStream(data: data)
         let length = UInt64(data.count)
@@ -183,28 +168,19 @@ open class MultipartFormData {
         }
     }
 
-    /// Creates a body part from the file and appends it to the instance.
-    ///
-    /// The body part data will be encoded using the following format:
-    ///
-    /// - Content-Disposition: form-data; name=#{name}; filename=#{filename} (HTTP Header)
-    /// - Content-Type: #{mimeType} (HTTP Header)
-    /// - Encoded file data
-    /// - Multipart form boundary
-    ///
-    /// - Parameters:
-    ///   - fileURL:  `URL` of the file whose content will be encoded into the instance.
-    ///   - name:     Name to associate with the file content in the `Content-Disposition` HTTP header.
-    ///   - fileName: Filename to associate with the file content in the `Content-Disposition` HTTP header.
-    ///   - mimeType: MIME type to associate with the file content in the `Content-Type` HTTP header.
-    public func append(_ fileURL: URL, withName name: String, fileName: String, mimeType: String) {
+    // 包含最多参数的函数，这个函数会成为其他函数的内部实现基础
+    public func append(_ fileURL: URL, withName name: String, fileName: String, mimeType: String)
+    {
+        // 根据name，mimeType，fileName计算出headers
         let headers = contentHeaders(withName: name, fileName: fileName, mimeType: mimeType)
 
         //============================================================
         //                 Check 1 - is file URL?
         //============================================================
 
-        guard fileURL.isFileURL else {
+        // 判断fileURL是不是一个file的URL
+        guard fileURL.isFileURL else
+        {
             setBodyPartError(withReason: .bodyPartURLInvalid(url: fileURL))
             return
         }
@@ -213,13 +189,18 @@ open class MultipartFormData {
         //              Check 2 - is file URL reachable?
         //============================================================
 
-        do {
+        // 判断该fileURL是不是可达的
+        do
+        {
             let isReachable = try fileURL.checkPromisedItemIsReachable()
-            guard isReachable else {
+            guard isReachable else
+            {
                 setBodyPartError(withReason: .bodyPartFileNotReachable(at: fileURL))
                 return
             }
-        } catch {
+        }
+        catch
+        {
             setBodyPartError(withReason: .bodyPartFileNotReachableWithError(atURL: fileURL, error: error))
             return
         }
@@ -228,10 +209,12 @@ open class MultipartFormData {
         //            Check 3 - is file URL a directory?
         //============================================================
 
+        // 判断fileURL是不是一个文件夹，而不是具体的数据
         var isDirectory: ObjCBool = false
         let path = fileURL.path
 
-        guard fileManager.fileExists(atPath: path, isDirectory: &isDirectory) && !isDirectory.boolValue else {
+        guard fileManager.fileExists(atPath: path, isDirectory: &isDirectory) && !isDirectory.boolValue else
+        {
             setBodyPartError(withReason: .bodyPartFileIsDirectory(at: fileURL))
             return
         }
@@ -240,16 +223,21 @@ open class MultipartFormData {
         //          Check 4 - can the file size be extracted?
         //============================================================
 
+        // 判断fileURL指定的文件能不能被读取
         let bodyContentLength: UInt64
 
-        do {
-            guard let fileSize = try fileManager.attributesOfItem(atPath: path)[.size] as? NSNumber else {
+        do
+        {
+            guard let fileSize = try fileManager.attributesOfItem(atPath: path)[.size] as? NSNumber else
+            {
                 setBodyPartError(withReason: .bodyPartFileSizeNotAvailable(at: fileURL))
                 return
             }
 
             bodyContentLength = fileSize.uint64Value
-        } catch {
+        }
+        catch
+        {
             setBodyPartError(withReason: .bodyPartFileSizeQueryFailedWithError(forURL: fileURL, error: error))
             return
         }
@@ -258,7 +246,9 @@ open class MultipartFormData {
         //       Check 5 - can a stream be created from file URL?
         //============================================================
 
-        guard let stream = InputStream(url: fileURL) else {
+        // 判断能不能通过fileURL创建InputStream
+        guard let stream = InputStream(url: fileURL) else
+        {
             setBodyPartError(withReason: .bodyPartInputStreamCreationFailed(for: fileURL))
             return
         }
@@ -290,99 +280,109 @@ open class MultipartFormData {
         append(stream, withLength: length, headers: headers)
     }
 
-    /// Creates a body part with the stream, length, and headers and appends it to the instance.
-    ///
-    /// The body part data will be encoded using the following format:
-    ///
-    /// - HTTP headers
-    /// - Encoded stream data
-    /// - Multipart form boundary
-    ///
-    /// - Parameters:
-    ///   - stream:  `InputStream` to encode into the instance.
-    ///   - length:  Length, in bytes, of the stream.
-    ///   - headers: `HTTPHeaders` for the body part.
-    public func append(_ stream: InputStream, withLength length: UInt64, headers: HTTPHeaders) {
+    // 设计函数来实现把每一条数据封装成BodyPart对象，然后拼接到bodyParts数组中
+    public func append(_ stream: InputStream, withLength length: UInt64, headers: HTTPHeaders)
+    {
+        // 给出headers，stream和length就能生成BodyPart对象
         let bodyPart = BodyPart(headers: headers, bodyStream: stream, bodyContentLength: length)
+        // 然后把它拼接到数组中就行了
         bodyParts.append(bodyPart)
     }
 
     // MARK: - Data Encoding
 
-    /// Encodes all appended body parts into a single `Data` value.
-    ///
-    /// - Note: This method will load all the appended body parts into memory all at the same time. This method should
-    ///         only be used when the encoded data will have a small memory footprint. For large data cases, please use
-    ///         the `writeEncodedData(to:))` method.
-    ///
-    /// - Returns: The encoded `Data`, if encoding is successful.
-    /// - Throws:  An `AFError` if encoding encounters an error.
-    public func encode() throws -> Data {
-        if let bodyPartError = bodyPartError {
+    // 编码整个请求体
+    public func encode() throws -> Data
+    {
+        // 如果发生异常, 则直接抛出
+        if let bodyPartError = bodyPartError
+        {
             throw bodyPartError
         }
 
+        // 最终的请求体
         var encoded = Data()
 
+        // 给数组中第一个数据设置开始边界，最后一个数据设置结束边界
         bodyParts.first?.hasInitialBoundary = true
         bodyParts.last?.hasFinalBoundary = true
 
-        for bodyPart in bodyParts {
+        // 拼接 body
+        for bodyPart in bodyParts
+        {
+            // 编码内容块
             let encodedData = try encode(bodyPart)
+            // 把bodyPart对象转换成Data类型，然后拼接到encoded中
             encoded.append(encodedData)
         }
 
         return encoded
     }
 
-    /// Writes all appended body parts to the given file `URL`.
-    ///
-    /// This process is facilitated by reading and writing with input and output streams, respectively. Thus,
-    /// this approach is very memory efficient and should be used for large body part data.
-    ///
-    /// - Parameter fileURL: File `URL` to which to write the form data.
-    /// - Throws:            An `AFError` if encoding encounters an error.
-    public func writeEncodedData(to fileURL: URL) throws {
-        if let bodyPartError = bodyPartError {
+    // 写入编码好的数据到指定文件（处理大尺寸数据）
+    public func writeEncodedData(to fileURL: URL) throws
+    {
+        if let bodyPartError = bodyPartError
+        {
             throw bodyPartError
         }
 
-        if fileManager.fileExists(atPath: fileURL.path) {
+        // 判断写入文件是否已存在
+        if fileManager.fileExists(atPath: fileURL.path)
+        {
             throw AFError.multipartEncodingFailed(reason: .outputStreamFileAlreadyExists(at: fileURL))
-        } else if !fileURL.isFileURL {
+        }
+        // 判断是否是文件 url
+        else if !fileURL.isFileURL
+        {
             throw AFError.multipartEncodingFailed(reason: .outputStreamURLInvalid(url: fileURL))
         }
 
-        guard let outputStream = OutputStream(url: fileURL, append: false) else {
+        // 生成流
+        guard let outputStream = OutputStream(url: fileURL, append: false) else
+        {
             throw AFError.multipartEncodingFailed(reason: .outputStreamCreationFailed(for: fileURL))
         }
-
+        
+        // 开启流
         outputStream.open()
+        // defer可以定义代码块结束后执行的语句
         defer { outputStream.close() }
 
+        // 设置头尾
         bodyParts.first?.hasInitialBoundary = true
         bodyParts.last?.hasFinalBoundary = true
 
-        for bodyPart in bodyParts {
+        for bodyPart in bodyParts
+        {
+            // 写入
             try write(bodyPart, to: outputStream)
         }
     }
 
     // MARK: - Private - Body Part Encoding
 
-    private func encode(_ bodyPart: BodyPart) throws -> Data {
+    // 编码内容块为 data
+    private func encode(_ bodyPart: BodyPart) throws -> Data
+    {
+        // 最终数据
         var encoded = Data()
 
+        // 如果是第一个数据， 要使用起始字段, 否则用正常分割字段
         let initialData = bodyPart.hasInitialBoundary ? initialBoundaryData() : encapsulatedBoundaryData()
         encoded.append(initialData)
 
+        // 添加头字段
         let headerData = encodeHeaders(for: bodyPart)
         encoded.append(headerData)
 
+        // 添加内容字段
         let bodyStreamData = try encodeBodyStream(for: bodyPart)
         encoded.append(bodyStreamData)
 
-        if bodyPart.hasFinalBoundary {
+        // 如果是最后一个数据，要加上尾字段
+        if bodyPart.hasFinalBoundary
+        {
             encoded.append(finalBoundaryData())
         }
 
@@ -545,3 +545,11 @@ open class MultipartFormData {
         bodyPartError = AFError.multipartEncodingFailed(reason: reason)
     }
 }
+
+ 
+ 
+
+
+
+
+

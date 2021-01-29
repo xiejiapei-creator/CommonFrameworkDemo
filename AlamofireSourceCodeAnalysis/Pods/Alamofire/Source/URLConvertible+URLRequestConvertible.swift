@@ -56,22 +56,23 @@ extension URLComponents: URLConvertible
 
 // MARK: -
 
-/// Types adopting the `URLRequestConvertible` protocol can be used to safely construct `URLRequest`s.
-public protocol URLRequestConvertible {
-    /// Returns a `URLRequest` or throws if an `Error` was encountered.
-    ///
-    /// - Returns: A `URLRequest`.
-    /// - Throws:  Any error thrown while constructing the `URLRequest`.
+// 可以转换成 urlrequest 的协议
+public protocol URLRequestConvertible
+{
+    // 返回一个 urlrequest, 如果有错, 可以抛出异常
     func asURLRequest() throws -> URLRequest
 }
 
-extension URLRequestConvertible {
-    /// The `URLRequest` returned by discarding any `Error` encountered.
+// 创建 urlRequest
+extension URLRequestConvertible
+{
+    
     public var urlRequest: URLRequest? { try? asURLRequest() }
 }
 
-extension URLRequest: URLRequestConvertible {
-    /// Returns `self`.
+// 返回自身
+extension URLRequest: URLRequestConvertible
+{
     public func asURLRequest() throws -> URLRequest { self }
 }
 

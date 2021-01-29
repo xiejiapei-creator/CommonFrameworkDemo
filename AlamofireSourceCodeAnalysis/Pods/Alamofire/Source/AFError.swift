@@ -24,51 +24,91 @@
 
 import Foundation
 
-/// `AFError` is the error type returned by Alamofire. It encompasses a few different types of errors, each with
-/// their own associated reasons.
-public enum AFError: Error {
-    /// The underlying reason the `.multipartEncodingFailed` error occurred.
-    public enum MultipartEncodingFailureReason {
-        /// The `fileURL` provided for reading an encodable body part isn't a file `URL`.
+public enum AFError: Error
+{
+    // 多部分编码错误
+    public enum MultipartEncodingFailureReason
+    {
+        // 上传数据时，可以通过fileURL的方式，读取本地文件数据，如果fileURL不可用，就会抛出这个错误
         case bodyPartURLInvalid(url: URL)
-        /// The filename of the `fileURL` provided has either an empty `lastPathComponent` or `pathExtension.
+        // 如果使用fileURL的lastPathComponent或者pathExtension获取filename为空则抛出该错误
         case bodyPartFilenameInvalid(in: URL)
-        /// The file at the `fileURL` provided was not reachable.
+        // 如果通过fileURL不能访问数据，那就是不可达的
         case bodyPartFileNotReachable(at: URL)
-        /// Attempting to check the reachability of the `fileURL` provided threw an error.
+        // 尝试检测fileURL时发现不是可达的则抛出该错误
         case bodyPartFileNotReachableWithError(atURL: URL, error: Error)
-        /// The file at the `fileURL` provided is actually a directory.
+        // 当fileURL是一个文件夹时抛出该错误
         case bodyPartFileIsDirectory(at: URL)
-        /// The size of the file at the `fileURL` provided was not returned by the system.
+        // 当使用系统Api获取fileURL指定文件的size出错时抛出该错误
         case bodyPartFileSizeNotAvailable(at: URL)
-        /// The attempt to find the size of the file at the `fileURL` provided threw an error.
+        // 查询fileURL指定文件的size出错时抛出该错误
         case bodyPartFileSizeQueryFailedWithError(forURL: URL, error: Error)
-        /// An `InputStream` could not be created for the provided `fileURL`.
+        // 通过fileURL创建inputStream出错时抛出该错误
         case bodyPartInputStreamCreationFailed(for: URL)
-        /// An `OutputStream` could not be created when attempting to write the encoded data to disk.
+        // 当尝试把编码后的数据写入到硬盘时，创建outputStream出错时抛出该错误
         case outputStreamCreationFailed(for: URL)
-        /// The encoded body data could not be written to disk because a file already exists at the provided `fileURL`.
+        // 数据不能被写入，因为指定的fileURL已经存在
         case outputStreamFileAlreadyExists(at: URL)
-        /// The `fileURL` provided for writing the encoded body data to disk is not a file `URL`.
+        // fileURL不是一个file URL
         case outputStreamURLInvalid(url: URL)
-        /// The attempt to write the encoded body data to disk failed with an underlying error.
+        // 数据流写入错误
         case outputStreamWriteFailed(error: Error)
-        /// The attempt to read an encoded body part `InputStream` failed with underlying system error.
+        // 数据流读入错误
         case inputStreamReadFailed(error: Error)
     }
 
-    /// The underlying reason the `.parameterEncodingFailed` error occurred.
-    public enum ParameterEncodingFailureReason {
-        /// The `URLRequest` did not have a `URL` to encode.
+    // 参数编码错误
+    public enum ParameterEncodingFailureReason
+    {
+        // 给定的urlRequest.url为nil的情况抛出该错误
         case missingURL
-        /// JSON serialization failed with an underlying system error during the encoding process.
+        // 当选择把参数编码成JSON格式的情况下，参数JSON化出错时抛出的错误
         case jsonEncodingFailed(error: Error)
-        /// Custom parameter encoding failed due to the associated `Error`.
+        // 自定义编码出错时抛出的错误
         case customEncodingFailed(error: Error)
     }
 
+    // 响应验证失败
+    public enum ResponseValidationFailureReason
+    {
+        // 保存数据的URL不存在，这种情况一般出现在下载任务中，指的是下载代理中的fileURL缺失
+        case dataFileNil
+        // 保存数据的URL无法读取数据，同上
+        case dataFileReadFailed(at: URL)
+        // 服务器返回的response不包含ContentType且提供的acceptableContentTypes不包含通配符(通配符表示可以接受任何类型)
+        case missingContentType(acceptableContentTypes: [String])
+        // ContentTypes不匹配
+        case unacceptableContentType(acceptableContentTypes: [String], responseContentType: String)
+        // StatusCode不匹配
+        case unacceptableStatusCode(code: Int)
+        // 自定义验证失败
+        case customValidationFailed(error: Error)
+    }
+
+    // 响应序列化错误
+    public enum ResponseSerializationFailureReason
+    {
+        // 服务器返回的response没有数据或者数据的长度是0
+        case inputDataNilOrZeroLength
+        // 指向数据的URL不存在
+        case inputFileNil
+        // 指向数据的URL无法读取数据
+        case inputFileReadFailed(at: URL)
+        // 当使用指定的String.Encoding序列化数据为字符串出错时抛出的错误
+        case stringSerializationFailed(encoding: String.Encoding)
+        // JSON序列化错误
+        case jsonSerializationFailed(error: Error)
+        // 数据解码失败
+        case decodingFailed(error: Error)
+        // 自定义序列化失败
+        case customSerializationFailed(error: Error)
+        // 无效响应
+        case invalidEmptyResponse(type: String)
+    }
+    
     /// The underlying reason the `.parameterEncoderFailed` error occurred.
-    public enum ParameterEncoderFailureReason {
+    public enum ParameterEncoderFailureReason
+    {
         /// Possible missing components.
         public enum RequiredComponent {
             /// The `URL` was missing or unable to be extracted from the passed `URLRequest` or during encoding.
@@ -83,45 +123,9 @@ public enum AFError: Error {
         case encoderFailed(error: Error)
     }
 
-    /// The underlying reason the `.responseValidationFailed` error occurred.
-    public enum ResponseValidationFailureReason {
-        /// The data file containing the server response did not exist.
-        case dataFileNil
-        /// The data file containing the server response at the associated `URL` could not be read.
-        case dataFileReadFailed(at: URL)
-        /// The response did not contain a `Content-Type` and the `acceptableContentTypes` provided did not contain a
-        /// wildcard type.
-        case missingContentType(acceptableContentTypes: [String])
-        /// The response `Content-Type` did not match any type in the provided `acceptableContentTypes`.
-        case unacceptableContentType(acceptableContentTypes: [String], responseContentType: String)
-        /// The response status code was not acceptable.
-        case unacceptableStatusCode(code: Int)
-        /// Custom response validation failed due to the associated `Error`.
-        case customValidationFailed(error: Error)
-    }
-
-    /// The underlying reason the response serialization error occurred.
-    public enum ResponseSerializationFailureReason {
-        /// The server response contained no data or the data was zero length.
-        case inputDataNilOrZeroLength
-        /// The file containing the server response did not exist.
-        case inputFileNil
-        /// The file containing the server response could not be read from the associated `URL`.
-        case inputFileReadFailed(at: URL)
-        /// String serialization failed using the provided `String.Encoding`.
-        case stringSerializationFailed(encoding: String.Encoding)
-        /// JSON serialization failed with an underlying system error.
-        case jsonSerializationFailed(error: Error)
-        /// A `DataDecoder` failed to decode the response due to the associated `Error`.
-        case decodingFailed(error: Error)
-        /// A custom response serializer failed due to the associated `Error`.
-        case customSerializationFailed(error: Error)
-        /// Generic serialization failed for an empty response that wasn't type `Empty` but instead the associated type.
-        case invalidEmptyResponse(type: String)
-    }
-
     /// Underlying reason a server trust evaluation error occurred.
-    public enum ServerTrustFailureReason {
+    public enum ServerTrustFailureReason
+    {
         /// The output of a server trust evaluation.
         public struct Output {
             /// The host for which the evaluation was performed.
@@ -175,6 +179,16 @@ public enum AFError: Error {
         /// URLRequest with GET method had body data.
         case bodyDataInGETRequest(Data)
     }
+    
+    // 无效的URL
+    case invalidURL(url: URLConvertible)
+    // 多部分编码失败
+    case multipartEncodingFailed(reason: MultipartEncodingFailureReason)
+    // 请求参数编码失败
+    case parameterEncodingFailed(reason: ParameterEncodingFailureReason)
+    // 响应序列化失败
+    case responseSerializationFailed(reason: ResponseSerializationFailureReason)
+    
 
     ///  `UploadableConvertible` threw an error in `createUploadable()`.
     case createUploadableFailed(error: Error)
@@ -184,12 +198,6 @@ public enum AFError: Error {
     case downloadedFileMoveFailed(error: Error, source: URL, destination: URL)
     /// `Request` was explicitly cancelled.
     case explicitlyCancelled
-    /// `URLConvertible` type failed to create a valid `URL`.
-    case invalidURL(url: URLConvertible)
-    /// Multipart form encoding failed.
-    case multipartEncodingFailed(reason: MultipartEncodingFailureReason)
-    /// `ParameterEncoding` threw an error during the encoding process.
-    case parameterEncodingFailed(reason: ParameterEncodingFailureReason)
     /// `ParameterEncoder` threw an error while running the encoder.
     case parameterEncoderFailed(reason: ParameterEncoderFailureReason)
     /// `RequestAdapter` threw an error during adaptation.
@@ -198,8 +206,6 @@ public enum AFError: Error {
     case requestRetryFailed(retryError: Error, originalError: Error)
     /// Response validation failed.
     case responseValidationFailed(reason: ResponseValidationFailureReason)
-    /// Response serialization failed.
-    case responseSerializationFailed(reason: ResponseSerializationFailureReason)
     /// `ServerTrustEvaluating` instance threw an error during trust evaluation.
     case serverTrustEvaluationFailed(reason: ServerTrustFailureReason)
     /// `Session` which issued the `Request` was deinitialized, most likely because its reference went out of scope.
@@ -212,7 +218,8 @@ public enum AFError: Error {
     case urlRequestValidationFailed(reason: URLRequestValidationFailureReason)
 }
 
-extension Error {
+extension Error
+{
     /// Returns the instance cast as an `AFError`.
     public var asAFError: AFError? {
         self as? AFError
@@ -234,7 +241,43 @@ extension Error {
 
 // MARK: - Error Booleans
 
-extension AFError {
+extension AFError
+{
+    // 无效的URL
+    public var isInvalidURLError: Bool
+    {
+        if case .invalidURL = self { return true }
+        return false
+    }
+
+    // 请求参数编码错误
+    public var isParameterEncodingError: Bool
+    {
+        if case .parameterEncodingFailed = self { return true }
+        return false
+    }
+
+    // 多部分编码错误
+    public var isMultipartEncodingError: Bool
+    {
+        if case .multipartEncodingFailed = self { return true }
+        return false
+    }
+    
+    // 响应验证错误
+    public var isResponseValidationError: Bool
+    {
+        if case .responseValidationFailed = self { return true }
+        return false
+    }
+
+    // 响应序列化错误
+    public var isResponseSerializationError: Bool
+    {
+        if case .responseSerializationFailed = self { return true }
+        return false
+    }
+    
     /// Returns whether the instance is `.sessionDeinitialized`.
     public var isSessionDeinitializedError: Bool {
         if case .sessionDeinitialized = self { return true }
@@ -252,20 +295,7 @@ extension AFError {
         if case .explicitlyCancelled = self { return true }
         return false
     }
-
-    /// Returns whether the instance is `.invalidURL`.
-    public var isInvalidURLError: Bool {
-        if case .invalidURL = self { return true }
-        return false
-    }
-
-    /// Returns whether the instance is `.parameterEncodingFailed`. When `true`, the `underlyingError` property will
-    /// contain the associated value.
-    public var isParameterEncodingError: Bool {
-        if case .parameterEncodingFailed = self { return true }
-        return false
-    }
-
+    
     /// Returns whether the instance is `.parameterEncoderFailed`. When `true`, the `underlyingError` property will
     /// contain the associated value.
     public var isParameterEncoderError: Bool {
@@ -273,31 +303,11 @@ extension AFError {
         return false
     }
 
-    /// Returns whether the instance is `.multipartEncodingFailed`. When `true`, the `url` and `underlyingError`
-    /// properties will contain the associated values.
-    public var isMultipartEncodingError: Bool {
-        if case .multipartEncodingFailed = self { return true }
-        return false
-    }
 
     /// Returns whether the instance is `.requestAdaptationFailed`. When `true`, the `underlyingError` property will
     /// contain the associated value.
     public var isRequestAdaptationError: Bool {
         if case .requestAdaptationFailed = self { return true }
-        return false
-    }
-
-    /// Returns whether the instance is `.responseValidationFailed`. When `true`, the `acceptableContentTypes`,
-    /// `responseContentType`,  `responseCode`, and `underlyingError` properties will contain the associated values.
-    public var isResponseValidationError: Bool {
-        if case .responseValidationFailed = self { return true }
-        return false
-    }
-
-    /// Returns whether the instance is `.responseSerializationFailed`. When `true`, the `failedStringEncoding` and
-    /// `underlyingError` properties will contain the associated values.
-    public var isResponseSerializationError: Bool {
-        if case .responseSerializationFailed = self { return true }
         return false
     }
 
@@ -346,17 +356,41 @@ extension AFError {
 
 // MARK: - Convenience Properties
 
-extension AFError {
-    /// The `URLConvertible` associated with the error.
-    public var urlConvertible: URLConvertible? {
+extension AFError
+{
+    // 获取某个属性，这个属性实现了URLConvertible协议，在AFError中只有case invalidURL(url: URLConvertible)这个选项符合要求
+    public var urlConvertible: URLConvertible?
+    {
         guard case let .invalidURL(url) = self else { return nil }
         return url
     }
 
-    /// The `URL` associated with the error.
-    public var url: URL? {
+    // 获取AFError中的URL
+    public var url: URL?
+    {
         guard case let .multipartEncodingFailed(reason) = self else { return nil }
         return reason.url
+    }
+    
+    // 可接受的ContentType
+    public var acceptableContentTypes: [String]?
+    {
+        guard case let .responseValidationFailed(reason) = self else { return nil }
+        return reason.acceptableContentTypes
+    }
+    
+    // 响应码
+    public var responseCode: Int?
+    {
+        guard case let .responseValidationFailed(reason) = self else { return nil }
+        return reason.responseCode
+    }
+
+    // 错误的字符串编码
+    public var failedStringEncoding: String.Encoding?
+    {
+        guard case let .responseSerializationFailed(reason) = self else { return nil }
+        return reason.failedStringEncoding
     }
 
     /// The underlying `Error` responsible for generating the failure associated with `.sessionInvalidated`,
@@ -397,29 +431,10 @@ extension AFError {
             return nil
         }
     }
-
-    /// The acceptable `Content-Type`s of a `.responseValidationFailed` error.
-    public var acceptableContentTypes: [String]? {
-        guard case let .responseValidationFailed(reason) = self else { return nil }
-        return reason.acceptableContentTypes
-    }
-
-    /// The response `Content-Type` of a `.responseValidationFailed` error.
+    
     public var responseContentType: String? {
         guard case let .responseValidationFailed(reason) = self else { return nil }
         return reason.responseContentType
-    }
-
-    /// The response code of a `.responseValidationFailed` error.
-    public var responseCode: Int? {
-        guard case let .responseValidationFailed(reason) = self else { return nil }
-        return reason.responseCode
-    }
-
-    /// The `String.Encoding` associated with a failed `.stringResponse()` call.
-    public var failedStringEncoding: String.Encoding? {
-        guard case let .responseSerializationFailed(reason) = self else { return nil }
-        return reason.failedStringEncoding
     }
 
     /// The `source` URL of a `.downloadedFileMoveFailed` error.
@@ -631,9 +646,12 @@ extension AFError.ServerTrustFailureReason {
 
 // MARK: - Error Descriptions
 
-extension AFError: LocalizedError {
-    public var errorDescription: String? {
-        switch self {
+extension AFError: LocalizedError
+{
+    public var errorDescription: String?
+    {
+        switch self
+        {
         case .explicitlyCancelled:
             return "Request explicitly cancelled."
         case let .invalidURL(url):
@@ -678,9 +696,13 @@ extension AFError: LocalizedError {
     }
 }
 
-extension AFError.ParameterEncodingFailureReason {
-    var localizedDescription: String {
-        switch self {
+// 请求参数编码失败
+extension AFError.ParameterEncodingFailureReason
+{
+    var localizedDescription: String
+    {
+        switch self
+        {
         case .missingURL:
             return "URL request to encode was missing a URL"
         case let .jsonEncodingFailed(error):
@@ -838,3 +860,6 @@ extension AFError.URLRequestValidationFailureReason {
         }
     }
 }
+
+
+

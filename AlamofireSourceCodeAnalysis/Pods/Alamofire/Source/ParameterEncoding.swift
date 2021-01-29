@@ -24,54 +24,35 @@
 
 import Foundation
 
-/// A dictionary of parameters to apply to a `URLRequest`.
+// 参数字典
 public typealias Parameters = [String: Any]
 
-/// A type used to define how a set of parameters are applied to a `URLRequest`.
-public protocol ParameterEncoding {
-    /// Creates a `URLRequest` by encoding parameters and applying them on the passed request.
-    ///
-    /// - Parameters:
-    ///   - urlRequest: `URLRequestConvertible` value onto which parameters will be encoded.
-    ///   - parameters: `Parameters` to encode onto the request.
-    ///
-    /// - Returns:      The encoded `URLRequest`.
-    /// - Throws:       Any `Error` produced during parameter encoding.
+// 一个定义如何编码的协议
+public protocol ParameterEncoding
+{
     func encode(_ urlRequest: URLRequestConvertible, with parameters: Parameters?) throws -> URLRequest
 }
-
-// MARK: -
-
-/// Creates a url-encoded query string to be set as or appended to any existing URL query string or set as the HTTP
-/// body of the URL request. Whether the query string is set or appended to any existing URL query string or set as
-/// the HTTP body depends on the destination of the encoding.
-///
-/// The `Content-Type` HTTP header field of an encoded request with HTTP body is set to
-/// `application/x-www-form-urlencoded; charset=utf-8`.
-///
-/// There is no published specification for how to encode collection types. By default the convention of appending
-/// `[]` to the key for array values (`foo[]=1&foo[]=2`), and appending the key surrounded by square brackets for
-/// nested dictionary values (`foo[bar]=baz`) is used. Optionally, `ArrayEncoding` can be used to omit the
-/// square brackets appended to array keys.
-///
-/// `BoolEncoding` can be used to configure how boolean values are encoded. The default behavior is to encode
-/// `true` as 1 and `false` as 0.
-public struct URLEncoding: ParameterEncoding {
-    // MARK: Helper Types
-
-    /// Defines whether the url-encoded query string is applied to the existing query string or HTTP body of the
-    /// resulting URL request.
-    public enum Destination {
-        /// Applies encoded query string result to existing query string for `GET`, `HEAD` and `DELETE` requests and
-        /// sets as the HTTP body for requests with any other HTTP method.
+ 
+// 生成一个使用url-encoded方式编码过的字符串，可以添加到url或是请求体中，至于使用何种方式取决于编码的目的地参数
+// http 头中的 Content-Type 字段会被设置为 application/x-www-form-urlencoded; charset=utf-8
+// 由于没有一个明确的规定如何编码一个集合，我们在这里约定，对于数组，我们会在名字后面加上一个中括号[] 如(foo[]=1&foo[]=2)，对于字典 则在中括号中再加入键值，如foo[bar]=baz
+public struct URLEncoding: ParameterEncoding
+{
+    // 辅助类型：定义编码后的字符串是放到url还是请求体中
+    public enum Destination
+    {
+        // 对于 .get、.head、.delete 请求，它会将已编码查询字符串应用到现有的查询字符串中；对于其他类型的请求，会将其设置为 HTTP body
         case methodDependent
-        /// Sets or appends encoded query string result to existing query string.
+        // 将编码字符串设置或追加到请求的 URL 中
         case queryString
-        /// Sets encoded query string result as the HTTP body of the URL request.
+        // 将编码字符串设置为 URLRequest 的 HTTP body。
         case httpBody
 
-        func encodesParametersInURL(for method: HTTPMethod) -> Bool {
-            switch self {
+        // 是否将编码字符串放到url中
+        func encodesParametersInURL(for method: HTTPMethod) -> Bool
+        {
+            switch self
+            {
             case .methodDependent: return [.get, .head, .delete].contains(method)
             case .queryString: return true
             case .httpBody: return false
@@ -151,146 +132,177 @@ public struct URLEncoding: ParameterEncoding {
     }
 
     // MARK: Encoding
-
-    public func encode(_ urlRequest: URLRequestConvertible, with parameters: Parameters?) throws -> URLRequest {
+    // ParameterEncoding 协议的实现：编码并设置 request对象
+    public func encode(_ urlRequest: URLRequestConvertible, with parameters: Parameters?) throws -> URLRequest
+    {
+        // 获取 request
         var urlRequest = try urlRequest.asURLRequest()
-
+        // 获取参数，如果没有参数，那么直接返回
         guard let parameters = parameters else { return urlRequest }
 
-        if let method = urlRequest.method, destination.encodesParametersInURL(for: method) {
-            guard let url = urlRequest.url else {
+        // 获取请求方法，同时根据请求方法来判断是否需要编码参数到 url 中
+        if let method = urlRequest.method, destination.encodesParametersInURL(for: method)// 直接编码到 url 中
+        {
+            // 获取 url
+            guard let url = urlRequest.url else
+            {
                 throw AFError.parameterEncodingFailed(reason: .missingURL)
             }
 
-            if var urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: false), !parameters.isEmpty {
+            // 构建一个URLComponents对象，并在其中添加参数
+            if var urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: false), !parameters.isEmpty
+            {
+                // 此处 map 是 optional 的map，如果 optionvalue 不为空，则会调用 map 内的闭包
+                // 如果 url 中本来就有一部分参数了，那么就将新的参数附加在后面
                 let percentEncodedQuery = (urlComponents.percentEncodedQuery.map { $0 + "&" } ?? "") + query(parameters)
                 urlComponents.percentEncodedQuery = percentEncodedQuery
                 urlRequest.url = urlComponents.url
             }
-        } else {
-            if urlRequest.headers["Content-Type"] == nil {
+        }
+        else// 这里是要添加到请求体中
+        {
+            // 如果请求头尚未设置 Content-Type
+            if urlRequest.headers["Content-Type"] == nil
+            {
+                // 在请求头中设置编码格式
                 urlRequest.headers.update(.contentType("application/x-www-form-urlencoded; charset=utf-8"))
             }
-
+            // 编码到请求体中
             urlRequest.httpBody = Data(query(parameters).utf8)
         }
 
         return urlRequest
     }
 
-    /// Creates a percent-escaped, URL encoded query string components from the given key-value pair recursively.
-    ///
-    /// - Parameters:
-    ///   - key:   Key of the query component.
-    ///   - value: Value of the query component.
-    ///
-    /// - Returns: The percent-escaped, URL encoded query string components.
-    public func queryComponents(fromKey key: String, value: Any) -> [(String, String)] {
+    // 创建一个使用百分号转义urlencode编码的键和值的方法
+    public func queryComponents(fromKey key: String, value: Any) -> [(String, String)]
+    {
+        // 最终结果
         var components: [(String, String)] = []
-        switch value {
+        
+        switch value
+        {
+        // 如果value依然是字典，那么键后面加上[key]再调用自身，也就是做递归处理
         case let dictionary as [String: Any]:
-            for (nestedKey, value) in dictionary {
+            for (nestedKey, value) in dictionary
+            {
                 components += queryComponents(fromKey: "\(key)[\(nestedKey)]", value: value)
             }
+        // 如果value是数组，通过遍历在键后面加上[]后依然调用自身
+        // 把数组拼接到url中的规则是这样的：数组["a", "b", "c"]拼接后的结果是key[]="a"&key[]="b"&key[]="c"
         case let array as [Any]:
-            for value in array {
+            for value in array
+            {
                 components += queryComponents(fromKey: arrayEncoding.encode(key: key), value: value)
             }
+        // 如果value是NSNumber，要进一步判断这个NSNumber是不是表示布尔类型
         case let number as NSNumber:
-            if number.isBool {
+            if number.isBool// bool 值的处理
+            {
                 components.append((escape(key), escape(boolEncoding.encode(value: number.boolValue))))
-            } else {
+            }
+            else
+            {
                 components.append((escape(key), escape("\(number)")))
             }
+        // 如果value是Bool，转义后直接拼接进数组
         case let bool as Bool:
             components.append((escape(key), escape(boolEncoding.encode(value: bool))))
+        // 其他情况，转义后直接拼接进数组
         default:
             components.append((escape(key), escape("\(value)")))
         }
         return components
     }
 
-    /// Creates a percent-escaped string following RFC 3986 for a query string key or value.
-    ///
-    /// - Parameter string: `String` to be percent-escaped.
-    ///
-    /// - Returns:          The percent-escaped `String`.
-    public func escape(_ string: String) -> String {
+    // 上边函数中的key已经是字符串类型了，那么为什么还要进行转义的？
+    // 这是因为在url中有些字符是不允许的，这些字符会干扰url的解析
+    // :#[]@!$&'()*+,;= 这些字符必须要做转义 ?和/可以不用转义
+    // 转义的意思就是百分号编码
+    public func escape(_ string: String) -> String
+    {
+        // 使用了系统自带的函数来进行百分号编码
         string.addingPercentEncoding(withAllowedCharacters: .afURLQueryAllowed) ?? string
     }
 
-    private func query(_ parameters: [String: Any]) -> String {
+    // 将参数编码为查询字符串
+    // 可以看到URLEncoding方式是将parameters通过添加 & ，= 的方式拼接到url身后
+    private func query(_ parameters: [String: Any]) -> String
+    {
+        // 创建一个数组，这个数组中存放的是元组数据，元组中存放的是key和字符串类型的value
         var components: [(String, String)] = []
 
-        for key in parameters.keys.sorted(by: <) {
+        // 遍历参数，对参数做进一步的处理，然后拼接到数组中
+        for key in parameters.keys.sorted(by: <)
+        {
             let value = parameters[key]!
+            // key的类型是String，但value的类型是any
+            // 也就是说value不一定是字符串，也有可能是数组或字典，因此针对value需要做进一步的处理
             components += queryComponents(fromKey: key, value: value)
         }
+        // 把元组内部的数据用=号拼接，然后用符号&把数组拼接成字符串
         return components.map { "\($0)=\($1)" }.joined(separator: "&")
     }
 }
 
-// MARK: -
-
-/// Uses `JSONSerialization` to create a JSON representation of the parameters object, which is set as the body of the
-/// request. The `Content-Type` HTTP header field of an encoded request is set to `application/json`.
-public struct JSONEncoding: ParameterEncoding {
+// 使用 json 编码参数
+public struct JSONEncoding: ParameterEncoding
+{
     // MARK: Properties
 
-    /// Returns a `JSONEncoding` instance with default writing options.
+    // 使用默认参数构造
     public static var `default`: JSONEncoding { JSONEncoding() }
 
-    /// Returns a `JSONEncoding` instance with `.prettyPrinted` writing options.
+    // 让其拥有更好的展示效果
     public static var prettyPrinted: JSONEncoding { JSONEncoding(options: .prettyPrinted) }
 
-    /// The options for writing the parameters as JSON data.
+    // JSON序列化的写入方式
     public let options: JSONSerialization.WritingOptions
-
-    // MARK: Initialization
-
-    /// Creates an instance using the specified `WritingOptions`.
-    ///
-    /// - Parameter options: `JSONSerialization.WritingOptions` to use.
-    public init(options: JSONSerialization.WritingOptions = []) {
+    public init(options: JSONSerialization.WritingOptions = [])
+    {
         self.options = options
     }
 
     // MARK: Encoding
 
-    public func encode(_ urlRequest: URLRequestConvertible, with parameters: Parameters?) throws -> URLRequest {
+    // ParameterEncoding 协议实现
+    public func encode(_ urlRequest: URLRequestConvertible, with parameters: Parameters?) throws -> URLRequest
+    {
         var urlRequest = try urlRequest.asURLRequest()
 
         guard let parameters = parameters else { return urlRequest }
 
-        do {
+        do
+        {
+            // json 格式化数据
             let data = try JSONSerialization.data(withJSONObject: parameters, options: options)
 
-            if urlRequest.headers["Content-Type"] == nil {
+            // 如果 Content-Type 尚未设置
+            if urlRequest.headers["Content-Type"] == nil
+            {
+                // 设置请求头的Content-Type
                 urlRequest.headers.update(.contentType("application/json"))
             }
-
+            // 加上请求体
             urlRequest.httpBody = data
-        } catch {
+        }
+        catch
+        {
             throw AFError.parameterEncodingFailed(reason: .jsonEncodingFailed(error: error))
         }
 
         return urlRequest
     }
 
-    /// Encodes any JSON compatible object into a `URLRequest`.
-    ///
-    /// - Parameters:
-    ///   - urlRequest: `URLRequestConvertible` value into which the object will be encoded.
-    ///   - jsonObject: `Any` value (must be JSON compatible` to be encoded into the `URLRequest`. `nil` by default.
-    ///
-    /// - Returns:      The encoded `URLRequest`.
-    /// - Throws:       Any `Error` produced during encoding.
-    public func encode(_ urlRequest: URLRequestConvertible, withJSONObject jsonObject: Any? = nil) throws -> URLRequest {
+    // 实现同上一致, 不过这个可以接受数组的 json
+    public func encode(_ urlRequest: URLRequestConvertible, withJSONObject jsonObject: Any? = nil) throws -> URLRequest
+    {
         var urlRequest = try urlRequest.asURLRequest()
 
         guard let jsonObject = jsonObject else { return urlRequest }
 
-        do {
+        do
+        {
             let data = try JSONSerialization.data(withJSONObject: jsonObject, options: options)
 
             if urlRequest.headers["Content-Type"] == nil {
@@ -298,7 +310,9 @@ public struct JSONEncoding: ParameterEncoding {
             }
 
             urlRequest.httpBody = data
-        } catch {
+        }
+        catch
+        {
             throw AFError.parameterEncodingFailed(reason: .jsonEncodingFailed(error: error))
         }
 
@@ -315,3 +329,6 @@ extension NSNumber {
         String(cString: objCType) == "c"
     }
 }
+
+
+

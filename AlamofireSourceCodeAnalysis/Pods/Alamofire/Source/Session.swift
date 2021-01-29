@@ -69,7 +69,7 @@ open class Session
 
     /// Internal map between `Request`s and any `URLSessionTasks` that may be in flight for them.
     var requestTaskMap = RequestTaskMap()
-    /// `Set` of currently active `Request`s.
+    // 当前活动的网络请求集合
     var activeRequests: Set<Request> = []
     /// Completion events awaiting `URLSessionTaskMetrics`.
     var waitingCompletions: [URLSessionTask: () -> Void] = [:]
@@ -282,10 +282,10 @@ open class Session
                       encoding: ParameterEncoding = URLEncoding.default,
                       headers: HTTPHeaders? = nil,
                       interceptor: RequestInterceptor? = nil,
-                      requestModifier: RequestModifier? = nil) -> DataRequest {
-        
-        print("打印HTTPMethod的枚举：\(method)")
-        print("打印HTTPMethod的枚举关联值：\(method.rawValue)")
+                      requestModifier: RequestModifier? = nil) -> DataRequest
+    {
+        print("打印HTTPMethod的值：\(method)")
+        print("打印HTTPMethod的原始值：\(method.rawValue)")
         
         let convertible = RequestConvertible(url: convertible,
                                              method: method,
@@ -344,21 +344,17 @@ open class Session
         return request(convertible, interceptor: interceptor)
     }
 
-    /// Creates a `DataRequest` from a `URLRequestConvertible` value and a `RequestInterceptor`.
-    ///
-    /// - Parameters:
-    ///   - convertible: `URLRequestConvertible` value to be used to create the `URLRequest`.
-    ///   - interceptor: `RequestInterceptor` value to be used by the returned `DataRequest`. `nil` by default.
-    ///
-    /// - Returns:       The created `DataRequest`.
-    open func request(_ convertible: URLRequestConvertible, interceptor: RequestInterceptor? = nil) -> DataRequest {
+    // 内部实现的request方法
+    open func request(_ convertible: URLRequestConvertible, interceptor: RequestInterceptor? = nil) -> DataRequest
+    {
+        // 创建DataRequest
         let request = DataRequest(convertible: convertible,
                                   underlyingQueue: rootQueue,
                                   serializationQueue: serializationQueue,
                                   eventMonitor: eventMonitor,
                                   interceptor: interceptor,
                                   delegate: self)
-
+        // 执行提供的Request
         perform(request)
 
         return request
@@ -610,7 +606,8 @@ open class Session
         }
     }
 
-    struct Upload: UploadConvertible {
+    struct Upload: UploadConvertible
+    {
         let request: URLRequestConvertible
         let uploadable: UploadableConvertible
 
@@ -990,19 +987,25 @@ open class Session
 
     // MARK: Perform
 
-    /// Starts performing the provided `Request`.
-    ///
-    /// - Parameter request: The `Request` to perform.
-    func perform(_ request: Request) {
-        rootQueue.async {
+    // 开始执行提供的网络请求
+    func perform(_ request: Request)
+    {
+        rootQueue.async
+        {
+            // 如果网络请求取消掉了则直接返回
             guard !request.isCancelled else { return }
 
+            // 将该请求添加到当前活动的网络请求集合
             self.activeRequests.insert(request)
 
-            self.requestQueue.async {
-                // Leaf types must come first, otherwise they will cast as their superclass.
-                switch request {
-                case let r as UploadRequest: self.performUploadRequest(r) // UploadRequest must come before DataRequest due to subtype relationship.
+            // 在指定队列异步请求网络
+            self.requestQueue.async
+            {
+                // 判断request类型来执行具体请求任务
+                switch request
+                {
+                // 由于子类型关系，UploadRequest必须位于DataRequest之前
+                case let r as UploadRequest: self.performUploadRequest(r)
                 case let r as DataRequest: self.performDataRequest(r)
                 case let r as DownloadRequest: self.performDownloadRequest(r)
                 case let r as DataStreamRequest: self.performDataStreamRequest(r)
@@ -1257,9 +1260,6 @@ extension Session: SessionStateProvider {
         requestTaskMap.requests.forEach { $0.finish(error: AFError.sessionInvalidated(error: error)) }
     }
 }
+ 
 
-
-
-
-                        
 

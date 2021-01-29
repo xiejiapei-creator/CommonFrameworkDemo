@@ -25,13 +25,11 @@
 import Dispatch
 import Foundation
 
-extension DispatchQueue {
-    /// Execute the provided closure after a `TimeInterval`.
-    ///
-    /// - Parameters:
-    ///   - delay:   `TimeInterval` to delay execution.
-    ///   - closure: Closure to execute.
-    func after(_ delay: TimeInterval, execute closure: @escaping () -> Void) {
+extension DispatchQueue
+{
+    // 增加了一个名为after的延迟调用方法
+    func after(_ delay: TimeInterval, execute closure: @escaping () -> Void)
+    {
         asyncAfter(deadline: .now() + delay, execute: closure)
     }
 }

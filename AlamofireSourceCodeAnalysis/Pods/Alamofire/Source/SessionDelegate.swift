@@ -24,11 +24,14 @@
 
 import Foundation
 
-/// Class which implements the various `URLSessionDelegate` methods to connect various Alamofire features.
-open class SessionDelegate: NSObject {
+// 负责处理所有与内部 session 关联的代理回调
+open class SessionDelegate: NSObject
+{
     private let fileManager: FileManager
 
+    // 状态监听器
     weak var stateProvider: SessionStateProvider?
+    // 事件监听器
     var eventMonitor: EventMonitor?
 
     /// Creates an instance from the given `FileManager`.
@@ -55,7 +58,8 @@ open class SessionDelegate: NSObject {
 }
 
 /// Type which provides various `Session` state values.
-protocol SessionStateProvider: AnyObject {
+protocol SessionStateProvider: AnyObject
+{
     var serverTrustManager: ServerTrustManager? { get }
     var redirectHandler: RedirectHandler? { get }
     var cachedResponseHandler: CachedResponseHandler? { get }
@@ -69,7 +73,8 @@ protocol SessionStateProvider: AnyObject {
 
 // MARK: URLSessionDelegate
 
-extension SessionDelegate: URLSessionDelegate {
+extension SessionDelegate: URLSessionDelegate
+{
     open func urlSession(_ session: URLSession, didBecomeInvalidWithError error: Error?) {
         eventMonitor?.urlSession(session, didBecomeInvalidWithError: error)
 
@@ -79,7 +84,8 @@ extension SessionDelegate: URLSessionDelegate {
 
 // MARK: URLSessionTaskDelegate
 
-extension SessionDelegate: URLSessionTaskDelegate {
+extension SessionDelegate: URLSessionTaskDelegate
+{
     /// Result of a `URLAuthenticationChallenge` evaluation.
     typealias ChallengeEvaluation = (disposition: URLSession.AuthChallengeDisposition, credential: URLCredential?, error: AFError?)
 
@@ -154,11 +160,13 @@ extension SessionDelegate: URLSessionTaskDelegate {
         return (.useCredential, credential, nil)
     }
 
+    // 提供上传的进度
     open func urlSession(_ session: URLSession,
                          task: URLSessionTask,
                          didSendBodyData bytesSent: Int64,
                          totalBytesSent: Int64,
-                         totalBytesExpectedToSend: Int64) {
+                         totalBytesExpectedToSend: Int64)
+    {
         eventMonitor?.urlSession(session,
                                  task: task,
                                  didSendBodyData: bytesSent,
@@ -223,29 +231,42 @@ extension SessionDelegate: URLSessionTaskDelegate {
 
 // MARK: URLSessionDataDelegate
 
-extension SessionDelegate: URLSessionDataDelegate {
-    open func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
+extension SessionDelegate: URLSessionDataDelegate
+{
+    // 接收到了数据
+    open func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data)
+    {
         eventMonitor?.urlSession(session, dataTask: dataTask, didReceive: data)
 
-        if let request = request(for: dataTask, as: DataRequest.self) {
+        if let request = request(for: dataTask, as: DataRequest.self)
+        {
             request.didReceive(data: data)
-        } else if let request = request(for: dataTask, as: DataStreamRequest.self) {
+        }
+        else if let request = request(for: dataTask, as: DataStreamRequest.self)
+        {
             request.didReceive(data: data)
-        } else {
+        }
+        else
+        {
             assertionFailure("dataTask did not find DataRequest or DataStreamRequest in didReceive")
             return
         }
     }
 
+    // 该函数用于处理是否需要缓存响应，Alamofire默认是缓存这些response的
     open func urlSession(_ session: URLSession,
                          dataTask: URLSessionDataTask,
                          willCacheResponse proposedResponse: CachedURLResponse,
-                         completionHandler: @escaping (CachedURLResponse?) -> Void) {
+                         completionHandler: @escaping (CachedURLResponse?) -> Void)
+    {
         eventMonitor?.urlSession(session, dataTask: dataTask, willCacheResponse: proposedResponse)
 
-        if let handler = stateProvider?.request(for: dataTask)?.cachedResponseHandler ?? stateProvider?.cachedResponseHandler {
+        if let handler = stateProvider?.request(for: dataTask)?.cachedResponseHandler ?? stateProvider?.cachedResponseHandler
+        {
             handler.dataTask(dataTask, willCacheResponse: proposedResponse, completion: completionHandler)
-        } else {
+        }
+        else
+        {
             completionHandler(proposedResponse)
         }
     }
@@ -253,7 +274,9 @@ extension SessionDelegate: URLSessionDataDelegate {
 
 // MARK: URLSessionDownloadDelegate
 
-extension SessionDelegate: URLSessionDownloadDelegate {
+extension SessionDelegate: URLSessionDownloadDelegate
+{
+    // 断点续传
     open func urlSession(_ session: URLSession,
                          downloadTask: URLSessionDownloadTask,
                          didResumeAtOffset fileOffset: Int64,
@@ -271,6 +294,7 @@ extension SessionDelegate: URLSessionDownloadDelegate {
                                                totalBytesExpectedToWrite: expectedTotalBytes)
     }
 
+    // 提供下载进度
     open func urlSession(_ session: URLSession,
                          downloadTask: URLSessionDownloadTask,
                          didWriteData bytesWritten: Int64,
@@ -290,30 +314,39 @@ extension SessionDelegate: URLSessionDownloadDelegate {
                                                totalBytesExpectedToWrite: totalBytesExpectedToWrite)
     }
 
-    open func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
+    // 当数据下载完成后，该函数被触发
+    open func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL)
+    {
         eventMonitor?.urlSession(session, downloadTask: downloadTask, didFinishDownloadingTo: location)
 
-        guard let request = request(for: downloadTask, as: DownloadRequest.self) else {
+        guard let request = request(for: downloadTask, as: DownloadRequest.self) else
+        {
             assertionFailure("downloadTask did not find DownloadRequest.")
             return
         }
 
+        // 系统会把数据下载到一个临时的locationURL的地方，我们就是通过这个URL拿到数据的
         let (destination, options): (URL, DownloadRequest.Options)
-        if let response = request.response {
+        if let response = request.response
+        {
             (destination, options) = request.destination(location, response)
-        } else {
-            // If there's no response this is likely a local file download, so generate the temporary URL directly.
+        }
+        else
+        {
             (destination, options) = (DownloadRequest.defaultDestinationURL(location), [])
         }
 
         eventMonitor?.request(request, didCreateDestinationURL: destination)
 
+        // 把数据复制到目标路径中
         do {
-            if options.contains(.removePreviousFile), fileManager.fileExists(atPath: destination.path) {
+            if options.contains(.removePreviousFile), fileManager.fileExists(atPath: destination.path)
+            {
                 try fileManager.removeItem(at: destination)
             }
 
-            if options.contains(.createIntermediateDirectories) {
+            if options.contains(.createIntermediateDirectories)
+            {
                 let directory = destination.deletingLastPathComponent()
                 try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
             }
@@ -328,3 +361,6 @@ extension SessionDelegate: URLSessionDownloadDelegate {
         }
     }
 }
+
+
+ 

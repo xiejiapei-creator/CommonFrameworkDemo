@@ -26,39 +26,21 @@ import Foundation
 
 // MARK: Protocols
 
-/// The type to which all data response serializers must conform in order to serialize a response.
-public protocol DataResponseSerializerProtocol {
-    /// The type of serialized object to be created.
+// 定义数据序列化协议
+public protocol DataResponseSerializerProtocol
+{
+    // 序列化后的结果类型
     associatedtype SerializedObject
 
-    /// Serialize the response `Data` into the provided type..
-    ///
-    /// - Parameters:
-    ///   - request:  `URLRequest` which was used to perform the request, if any.
-    ///   - response: `HTTPURLResponse` received from the server, if any.
-    ///   - data:     `Data` returned from the server, if any.
-    ///   - error:    `Error` produced by Alamofire or the underlying `URLSession` during the request.
-    ///
-    /// - Returns:    The `SerializedObject`.
-    /// - Throws:     Any `Error` produced during serialization.
+    // 序列化方法
     func serialize(request: URLRequest?, response: HTTPURLResponse?, data: Data?, error: Error?) throws -> SerializedObject
 }
 
-/// The type to which all download response serializers must conform in order to serialize a response.
-public protocol DownloadResponseSerializerProtocol {
-    /// The type of serialized object to be created.
+// 定义下载序列化协议
+public protocol DownloadResponseSerializerProtocol
+{
     associatedtype SerializedObject
 
-    /// Serialize the downloaded response `Data` from disk into the provided type..
-    ///
-    /// - Parameters:
-    ///   - request:  `URLRequest` which was used to perform the request, if any.
-    ///   - response: `HTTPURLResponse` received from the server, if any.
-    ///   - fileURL:  File `URL` to which the response data was downloaded.
-    ///   - error:    `Error` produced by Alamofire or the underlying `URLSession` during the request.
-    ///
-    /// - Returns:    The `SerializedObject`.
-    /// - Throws:     Any `Error` produced during serialization.
     func serializeDownload(request: URLRequest?, response: HTTPURLResponse?, fileURL: URL?, error: Error?) throws -> SerializedObject
 }
 
@@ -167,22 +149,19 @@ extension DownloadResponseSerializerProtocol where Self: DataResponseSerializerP
 
 // MARK: - Default
 
-extension DataRequest {
-    /// Adds a handler to be called once the request has finished.
-    ///
-    /// - Parameters:
-    ///   - queue:             The queue on which the completion handler is dispatched. `.main` by default.
-    ///   - completionHandler: The code to be executed once the request has finished.
-    ///
-    /// - Returns:             The request.
+// 扩展 DataRequest，添加一个在请求结束后会调用获取返回结果的函数
+extension DataRequest
+{
+    // 使用未序列化的结果：序列化用时serializationDuration = 0
     @discardableResult
-    public func response(queue: DispatchQueue = .main, completionHandler: @escaping (AFDataResponse<Data?>) -> Void) -> Self {
-        appendResponseSerializer {
-            // Start work that should be on the serialization queue.
+    public func response(queue: DispatchQueue = .main, completionHandler: @escaping (AFDataResponse<Data?>) -> Void) -> Self
+    {
+        appendResponseSerializer
+        {
             let result = AFResult<Data?>(value: self.data, error: self.error)
-            // End work that should be on the serialization queue.
 
-            self.underlyingQueue.async {
+            self.underlyingQueue.async
+            {
                 let response = DataResponse(request: self.request,
                                             response: self.response,
                                             data: self.data,
@@ -199,60 +178,73 @@ extension DataRequest {
         return self
     }
 
-    /// Adds a handler to be called once the request has finished.
-    ///
-    /// - Parameters:
-    ///   - queue:              The queue on which the completion handler is dispatched. `.main` by default
-    ///   - responseSerializer: The response serializer responsible for serializing the request, response, and data.
-    ///   - completionHandler:  The code to be executed once the request has finished.
-    ///
-    /// - Returns:              The request.
+    // 使用指定序列化器序列化的结果：序列化用时serializationDuration = end - start
     @discardableResult
     public func response<Serializer: DataResponseSerializerProtocol>(queue: DispatchQueue = .main,
                                                                      responseSerializer: Serializer,
                                                                      completionHandler: @escaping (AFDataResponse<Serializer.SerializedObject>) -> Void)
-        -> Self {
-        appendResponseSerializer {
-            // Start work that should be on the serialization queue.
+        -> Self
+    {
+        appendResponseSerializer
+        {
+            // 应在序列化队列上的开始工作
             let start = ProcessInfo.processInfo.systemUptime
-            let result: AFResult<Serializer.SerializedObject> = Result {
+            
+            // 生成序列化结果
+            let result: AFResult<Serializer.SerializedObject> = Result
+            {
+                // 调用序列化器来序列化结果
                 try responseSerializer.serialize(request: self.request,
                                                  response: self.response,
                                                  data: self.data,
                                                  error: self.error)
-            }.mapError { error in
+            }
+            .mapError
+            { error in
                 error.asAFError(or: .responseSerializationFailed(reason: .customSerializationFailed(error: error)))
             }
-
+            // 应在序列化队列上的结束工作
             let end = ProcessInfo.processInfo.systemUptime
-            // End work that should be on the serialization queue.
 
-            self.underlyingQueue.async {
+            self.underlyingQueue.async
+            {
+                // 生成响应
                 let response = DataResponse(request: self.request,
                                             response: self.response,
                                             data: self.data,
                                             metrics: self.metrics,
                                             serializationDuration: end - start,
                                             result: result)
-
+                // 埋点日志
                 self.eventMonitor?.request(self, didParseResponse: response)
 
-                guard let serializerError = result.failure, let delegate = self.delegate else {
+                // 序列化过程出错
+                guard let serializerError = result.failure, let delegate = self.delegate else
+                {
+                    // 完成回调
                     self.responseSerializerDidComplete { queue.async { completionHandler(response) } }
                     return
                 }
 
-                delegate.retryResult(for: self, dueTo: serializerError) { retryResult in
+                // 异步询问委托是否将重试Request
+                delegate.retryResult(for: self, dueTo: serializerError)
+                { retryResult in
                     var didComplete: (() -> Void)?
 
-                    defer {
-                        if let didComplete = didComplete {
+                    defer
+                    {
+                        if let didComplete = didComplete
+                        {
+                            // 完成回调
                             self.responseSerializerDidComplete { queue.async { didComplete() } }
                         }
                     }
 
-                    switch retryResult {
+                    // 重试结果
+                    switch retryResult
+                    {
                     case .doNotRetry:
+                        // 完成回调
                         didComplete = { completionHandler(response) }
 
                     case let .doNotRetryWithError(retryError):
@@ -264,7 +256,7 @@ extension DataRequest {
                                                     metrics: self.metrics,
                                                     serializationDuration: end - start,
                                                     result: result)
-
+                        // 完成回调
                         didComplete = { completionHandler(response) }
 
                     case .retry, .retryWithDelay:
@@ -278,24 +270,19 @@ extension DataRequest {
     }
 }
 
-extension DownloadRequest {
-    /// Adds a handler to be called once the request has finished.
-    ///
-    /// - Parameters:
-    ///   - queue:             The queue on which the completion handler is dispatched. `.main` by default.
-    ///   - completionHandler: The code to be executed once the request has finished.
-    ///
-    /// - Returns:             The request.
+extension DownloadRequest
+{
     @discardableResult
     public func response(queue: DispatchQueue = .main,
                          completionHandler: @escaping (AFDownloadResponse<URL?>) -> Void)
-        -> Self {
-        appendResponseSerializer {
-            // Start work that should be on the serialization queue.
+        -> Self
+    {
+        appendResponseSerializer
+        {
             let result = AFResult<URL?>(value: self.fileURL, error: self.error)
-            // End work that should be on the serialization queue.
 
-            self.underlyingQueue.async {
+            self.underlyingQueue.async
+            {
                 let response = DownloadResponse(request: self.request,
                                                 response: self.response,
                                                 fileURL: self.fileURL,
@@ -529,7 +516,8 @@ extension DownloadRequest {
 /// A `ResponseSerializer` that decodes the response data as a `String`. By default, a request returning `nil` or no
 /// data is considered an error. However, if the request has an `HTTPMethod` or the response has an  HTTP status code
 /// valid for empty responses, then an empty `String` is returned.
-public final class StringResponseSerializer: ResponseSerializer {
+public final class StringResponseSerializer: ResponseSerializer
+{
     public let dataPreprocessor: DataPreprocessor
     /// Optional string encoding used to validate the response.
     public let encoding: String.Encoding?
@@ -583,20 +571,8 @@ public final class StringResponseSerializer: ResponseSerializer {
     }
 }
 
-extension DataRequest {
-    /// Adds a handler using a `StringResponseSerializer` to be called once the request has finished.
-    ///
-    /// - Parameters:
-    ///   - queue:               The queue on which the completion handler is dispatched. `.main` by default.
-    ///   - dataPreprocessor:    `DataPreprocessor` which processes the received `Data` before calling the
-    ///                          `completionHandler`. `PassthroughPreprocessor()` by default.
-    ///   - encoding:            The string encoding. Defaults to `nil`, in which case the encoding will be determined
-    ///                          from the server response, falling back to the default HTTP character set, `ISO-8859-1`.
-    ///   - emptyResponseCodes:  HTTP status codes for which empty responses are always valid. `[204, 205]` by default.
-    ///   - emptyRequestMethods: `HTTPMethod`s for which empty responses are always valid. `[.head]` by default.
-    ///   - completionHandler:   A closure to be executed once the request has finished.
-    ///
-    /// - Returns:               The request.
+extension DataRequest
+{
     @discardableResult
     public func responseString(queue: DispatchQueue = .main,
                                dataPreprocessor: DataPreprocessor = StringResponseSerializer.defaultDataPreprocessor,
@@ -1117,4 +1093,8 @@ extension DataStreamRequest {
 }
 
 
- 
+  
+
+  
+
+

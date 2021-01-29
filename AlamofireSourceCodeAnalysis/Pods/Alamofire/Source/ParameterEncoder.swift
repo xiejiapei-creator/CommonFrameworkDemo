@@ -25,7 +25,8 @@
 import Foundation
 
 /// A type that can encode any `Encodable` type into a `URLRequest`.
-public protocol ParameterEncoder {
+public protocol ParameterEncoder
+{
     /// Encode the provided `Encodable` parameters into `request`.
     ///
     /// - Parameters:
@@ -41,7 +42,8 @@ public protocol ParameterEncoder {
 /// A `ParameterEncoder` that encodes types as JSON body data.
 ///
 /// If no `Content-Type` header is already set on the provided `URLRequest`s, it's set to `application/json`.
-open class JSONParameterEncoder: ParameterEncoder {
+open class JSONParameterEncoder: ParameterEncoder
+{
     /// Returns an encoder with default parameters.
     public static var `default`: JSONParameterEncoder { JSONParameterEncoder() }
 

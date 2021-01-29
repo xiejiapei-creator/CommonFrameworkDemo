@@ -24,92 +24,111 @@
 
 import Foundation
 
-extension Request {
-    /// Posted when a `Request` is resumed. The `Notification` contains the resumed `Request`.
+// 用于指示通知名，在这里作用类似于一个命名空间
+extension Request
+{
+    // 在 Request 继续运行的时候会发送通知，通知中含有此 Request
     public static let didResumeNotification = Notification.Name(rawValue: "org.alamofire.notification.name.request.didResume")
-    /// Posted when a `Request` is suspended. The `Notification` contains the suspended `Request`.
+    // 在 Request 暂停的时候会发送通知，通知中含有此 Request
     public static let didSuspendNotification = Notification.Name(rawValue: "org.alamofire.notification.name.request.didSuspend")
-    /// Posted when a `Request` is cancelled. The `Notification` contains the cancelled `Request`.
+    // 在 Request 取消的时候会发送通知，通知中含有此 Request
     public static let didCancelNotification = Notification.Name(rawValue: "org.alamofire.notification.name.request.didCancel")
-    /// Posted when a `Request` is finished. The `Notification` contains the completed `Request`.
+    // 在 Request 完成的时候会发送通知，通知中含有此 Request
     public static let didFinishNotification = Notification.Name(rawValue: "org.alamofire.notification.name.request.didFinish")
 
-    /// Posted when a `URLSessionTask` is resumed. The `Notification` contains the `Request` associated with the `URLSessionTask`.
+    // 在 URLSessionTask 继续运行的时候会发送通知，通知中含有此 URLSessionTask 关联的 Request
     public static let didResumeTaskNotification = Notification.Name(rawValue: "org.alamofire.notification.name.request.didResumeTask")
-    /// Posted when a `URLSessionTask` is suspended. The `Notification` contains the `Request` associated with the `URLSessionTask`.
+    // 在 URLSessionTask 暂停的时候会发送通知，通知中含有此 URLSessionTask 关联的 Request
     public static let didSuspendTaskNotification = Notification.Name(rawValue: "org.alamofire.notification.name.request.didSuspendTask")
-    /// Posted when a `URLSessionTask` is cancelled. The `Notification` contains the `Request` associated with the `URLSessionTask`.
+    // 在 URLSessionTask 取消的时候会发送通知，通知中含有此 URLSessionTask 关联的 Request
     public static let didCancelTaskNotification = Notification.Name(rawValue: "org.alamofire.notification.name.request.didCancelTask")
-    /// Posted when a `URLSessionTask` is completed. The `Notification` contains the `Request` associated with the `URLSessionTask`.
+    // 在 URLSessionTask 完成的时候会发送通知，通知中含有此 URLSessionTask 关联的 Request
     public static let didCompleteTaskNotification = Notification.Name(rawValue: "org.alamofire.notification.name.request.didCompleteTask")
 }
 
 // MARK: -
 
-extension Notification {
-    /// The `Request` contained by the instance's `userInfo`, `nil` otherwise.
-    public var request: Request? {
+extension Notification
+{
+    // 通过字典键值从通知的用户信息中获取到关联的Request
+    public var request: Request?
+    {
         userInfo?[String.requestKey] as? Request
     }
 
-    /// Convenience initializer for a `Notification` containing a `Request` payload.
-    ///
-    /// - Parameters:
-    ///   - name:    The name of the notification.
-    ///   - request: The `Request` payload.
-    init(name: Notification.Name, request: Request) {
+    // 传入通知名称和当前Request初始化通知
+    init(name: Notification.Name, request: Request)
+    {
         self.init(name: name, object: nil, userInfo: [String.requestKey: request])
     }
 }
 
-extension NotificationCenter {
-    /// Convenience function for posting notifications with `Request` payloads.
-    ///
-    /// - Parameters:
-    ///   - name:    The name of the notification.
-    ///   - request: The `Request` payload.
-    func postNotification(named name: Notification.Name, with request: Request) {
+extension NotificationCenter
+{
+    // 传入通知名称和当前Request发送通知
+    func postNotification(named name: Notification.Name, with request: Request)
+    {
         let notification = Notification(name: name, request: request)
         post(notification)
     }
 }
 
-extension String {
-    /// User info dictionary key representing the `Request` associated with the notification.
+// 这里也是起到一个命名空间的作用，用于标记指定键值
+extension String
+{
+    // 表示与通知关联的Request的用户信息字典键值
     fileprivate static let requestKey = "org.alamofire.notification.key.request"
 }
 
-/// `EventMonitor` that provides Alamofire's notifications.
-public final class AlamofireNotifications: EventMonitor {
-    public func requestDidResume(_ request: Request) {
+// EventMonitor提供Alamofire通知发送的时机
+public final class AlamofireNotifications: EventMonitor
+{
+    // 当Request收到resume调用时调用的事件
+    public func requestDidResume(_ request: Request)
+    {
         NotificationCenter.default.postNotification(named: Request.didResumeNotification, with: request)
     }
 
+    // 当Request收到suspend调用时调用的事件
     public func requestDidSuspend(_ request: Request) {
         NotificationCenter.default.postNotification(named: Request.didSuspendNotification, with: request)
     }
 
-    public func requestDidCancel(_ request: Request) {
+    // 当Request收到cancel调用时调用的事件
+    public func requestDidCancel(_ request: Request)
+    {
         NotificationCenter.default.postNotification(named: Request.didCancelNotification, with: request)
     }
 
-    public func requestDidFinish(_ request: Request) {
+    // 当Request收到finish调用时调用的事件
+    public func requestDidFinish(_ request: Request)
+    {
         NotificationCenter.default.postNotification(named: Request.didFinishNotification, with: request)
     }
 
-    public func request(_ request: Request, didResumeTask task: URLSessionTask) {
+    // 在 URLSessionTask 继续运行的时候会发送通知，通知中含有此 URLSessionTask 关联的 Request
+    public func request(_ request: Request, didResumeTask task: URLSessionTask)
+    {
         NotificationCenter.default.postNotification(named: Request.didResumeTaskNotification, with: request)
     }
 
-    public func request(_ request: Request, didSuspendTask task: URLSessionTask) {
+    // 在 URLSessionTask 暂停的时候会发送通知，通知中含有此 URLSessionTask 关联的 Request
+    public func request(_ request: Request, didSuspendTask task: URLSessionTask)
+    {
         NotificationCenter.default.postNotification(named: Request.didSuspendTaskNotification, with: request)
     }
 
-    public func request(_ request: Request, didCancelTask task: URLSessionTask) {
+    // 在 URLSessionTask 取消的时候会发送通知，通知中含有此 URLSessionTask 关联的 Request
+    public func request(_ request: Request, didCancelTask task: URLSessionTask)
+    {
         NotificationCenter.default.postNotification(named: Request.didCancelTaskNotification, with: request)
     }
 
-    public func request(_ request: Request, didCompleteTask task: URLSessionTask, with error: AFError?) {
+    // 在 URLSessionTask 完成的时候会发送通知，通知中含有此 URLSessionTask 关联的 Request
+    public func request(_ request: Request, didCompleteTask task: URLSessionTask, with error: AFError?)
+    {
         NotificationCenter.default.postNotification(named: Request.didCompleteTaskNotification, with: request)
     }
 }
+
+ 

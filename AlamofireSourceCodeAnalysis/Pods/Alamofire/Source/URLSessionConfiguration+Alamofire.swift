@@ -25,10 +25,8 @@
 import Foundation
 
 extension URLSessionConfiguration: AlamofireExtended {}
-extension AlamofireExtension where ExtendedType: URLSessionConfiguration {
-    /// Alamofire's default configuration. Same as `URLSessionConfiguration.default` but adds Alamofire default
-    /// `Accept-Language`, `Accept-Encoding`, and `User-Agent` headers.
-    
+extension AlamofireExtension where ExtendedType: URLSessionConfiguration
+{
     
     public static var `default`: URLSessionConfiguration
     {

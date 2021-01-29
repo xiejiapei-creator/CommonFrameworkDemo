@@ -29,7 +29,8 @@ public typealias AFResult<Success> = Result<Success, AFError>
 
 // MARK: - Internal APIs
 
-extension Result {
+extension Result 
+{
     /// Returns whether the instance is `.success`.
     var isSuccess: Bool {
         guard case .success = self else { return false }
