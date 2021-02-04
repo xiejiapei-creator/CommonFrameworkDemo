@@ -15,3 +15,9 @@
 - [IOS框架：Reactive Cocoa](https://www.jianshu.com/p/b218886afce8)
 
 - [IOS框架：JSPatch](https://www.jianshu.com/p/42d6cd488ec8)
+
+- [IOS框架：RxSwift的源码分析](https://www.jianshu.com/p/9438e1188979)
+
+- [IOS框架：Alamofire 5 的核心源码分析](https://www.jianshu.com/p/6a378f2160c6)
+
+- [IOS框架：Alamofire 5 的功能模块源码分析](https://www.jianshu.com/p/6460dc096202)
