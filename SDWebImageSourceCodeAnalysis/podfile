@@ -1,0 +1,3 @@
+target 'SDWebImageSourceCodeAnalysis' do
+  pod 'SDWebImage'
+end
